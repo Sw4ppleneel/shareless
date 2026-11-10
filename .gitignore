@@ -1,0 +1,12 @@
+node_modules/
+dist/
+e2e-out/
+*.zip
+.DS_Store
+# Public data fetched by `npm run assets`
+assets/
+# Demo film build outputs
+video/node_modules/
+video/footage/
+video/out/
+video/tmp/

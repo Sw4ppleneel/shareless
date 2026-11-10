@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ShareLess</title>
+  <link rel="stylesheet" href="ui.css">
+  <link rel="stylesheet" href="panel.css">
+</head>
+<body>
+  <header>
+    <div class="row" style="justify-content: space-between">
+      <div class="brand"><span class="mark"><svg viewBox="0 0 24 24" fill="none" stroke="#04140B" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7.5 3v5.5c0 4.6-3.2 8.3-7.5 9.5-4.3-1.2-7.5-4.9-7.5-9.5V6z"/><path d="M8.8 12.2l2.3 2.3 4.2-4.5"/></svg></span><h1>ShareLess</h1></div>
+      <span id="ai-status"></span>
+    </div>
+    <p class="tagline">Who's asking, what they want, and the least you can give.</p>
+    <nav>
+      <button data-tab="site" class="on">Site</button>
+      <button data-tab="msg">Message</button>
+      <button data-tab="file">Share a file</button>
+      <button data-tab="shares">My shares</button>
+      <button data-tab="privacy">Privacy</button>
+    </nav>
+  </header>
+
+  <section id="tab-site"><div id="site-out"><p class="muted">Checking this site...</p></div></section>
+
+  <section id="tab-msg" hidden>
+    <h2>Check a message</h2>
+    <p class="small muted" style="margin-top:-4px">Paste an email, SMS, WhatsApp or Instagram message. It's checked on this device. In Gmail, Google Messages and WhatsApp Web, ShareLess checks messages on screen by itself.</p>
+    <input type="text" id="sender" placeholder="Sender: email, SMS header (AX-HDFCBK) or number">
+    <textarea id="msg" placeholder="Paste the message (any language)"></textarea>
+    <div class="row" style="margin-top:12px">
+      <button id="check">Check</button>
+      <button class="ghost" id="sample">Try a sample</button>
+    </div>
+    <div id="msg-out"></div>
+  </section>
+
+  <section id="tab-file" hidden>
+    <h2>Share a file</h2>
+    <p class="small muted">Pick a document and where you're sending it. ShareLess works out what's in it and what that place actually needs, then makes a copy with only that.</p>
+    <button id="open-advisor">Open the share advisor</button>
+    <p class="note">Tip: you don't need to come here. Choose a file in any upload field and ShareLess offers to check it first.</p>
+  </section>
+
+  <section id="tab-shares" hidden><div id="shares-out"></div></section>
+
+  <section id="tab-privacy" hidden>
+    <h2>What leaves this device</h2>
+    <p class="small muted">Messages, documents, form entries and policy text never leave. The on-device AI runs inside Chrome. The only network traffic is domain names sent for age checks (rdap.org) and a public phishing list being downloaded (nothing sent). All of it is listed here.</p>
+    <div id="settings" class="card small"></div>
+    <h2>Sent log</h2>
+    <div id="log-out"></div>
+    <button class="ghost" id="clear-log">Clear log</button>
+  </section>
+
+  <script src="panel.js"></script>
+</body>
+</html>

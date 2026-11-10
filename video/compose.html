@@ -1,0 +1,133 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>ShareLess film</title>
+<style>
+:root {
+  --bg: #0B0B0B; --teal: #13A35F; --teal2: #1ED17A; --mint: #2BDE86; --amber: #FFA42B; --coral: #F3727F;
+  --ink: #FFFFFF; --muted: #A7A7A7; --line: rgba(255,255,255,.10);
+  --sans: -apple-system, "SF Pro Display", system-ui, sans-serif; --serif: "Iowan Old Style", Georgia, serif; --mono: Menlo, monospace;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; background: #000; }
+#stage { position: relative; width: 1920px; height: 1080px; overflow: hidden; background: var(--bg); font-family: var(--sans); color: var(--ink); }
+.abs { position: absolute; }
+.layer { position: absolute; inset: 0; }
+.scene { position: absolute; inset: 0; visibility: hidden; }
+.a { opacity: 0; }
+
+/* background */
+.orb { position: absolute; width: 1400px; height: 1400px; border-radius: 50%; filter: blur(40px); }
+#grid { position: absolute; inset: -80px; background-image: radial-gradient(rgba(255,255,255,.07) 1.2px, transparent 1.6px); background-size: 44px 44px;
+  -webkit-mask-image: radial-gradient(ellipse at 50% 50%, #000 20%, transparent 75%); }
+#grain { position: absolute; inset: 0; opacity: .07; mix-blend-mode: overlay; pointer-events: none; }
+#vig { position: absolute; inset: 0; background: radial-gradient(ellipse at 50% 45%, transparent 55%, rgba(0,0,0,.55) 100%); pointer-events: none; }
+#flash { position: absolute; inset: 0; background: #eafff3; opacity: 0; mix-blend-mode: screen; }
+#black { position: absolute; inset: 0; background: #000; opacity: 0; }
+#progress { position: absolute; left: 0; bottom: 0; height: 3px; background: linear-gradient(90deg, var(--teal), var(--mint)); width: 0; opacity: .8; }
+
+/* type */
+.kicker { font: 600 20px/1 var(--mono); letter-spacing: .28em; color: var(--mint); text-transform: uppercase; }
+.h1 { font-weight: 800; font-size: 132px; line-height: .98; letter-spacing: -.045em; }
+.h2 { font-weight: 780; font-size: 76px; line-height: 1.02; letter-spacing: -.035em; }
+.h3 { font-weight: 700; font-size: 50px; line-height: 1.08; letter-spacing: -.025em; }
+.sub { font-size: 28px; line-height: 1.4; color: var(--muted); font-weight: 450; }
+.serif { font-family: var(--serif); font-style: italic; font-weight: 600; letter-spacing: -.02em; }
+.mint { color: var(--mint); } .coral { color: var(--coral); } .amber { color: var(--amber); } .muted { color: var(--muted); }
+.say { position: absolute; }
+.say .kicker { margin-bottom: 26px; }
+.say .sub { margin-top: 26px; }
+
+/* browser frame */
+.browser { position: absolute; border-radius: 18px; background: #121212; box-shadow: 0 60px 120px rgba(0,0,0,.6), 0 0 0 1px rgba(255,255,255,.10), 0 0 90px rgba(43,222,134,.10); overflow: hidden; transform-style: preserve-3d; }
+.browser .bar { height: 46px; display: flex; align-items: center; gap: 10px; padding: 0 16px; background: #1C1C1C; border-bottom: 1px solid rgba(255,255,255,.06); }
+.browser .dot { width: 12px; height: 12px; border-radius: 50%; }
+.browser .url { flex: 1; margin: 0 14px; height: 28px; border-radius: 14px; background: #2A2A2A; color: #B3B3B3; font: 500 14px/28px var(--sans); padding: 0 14px; display: flex; gap: 8px; align-items: center; }
+.browser .ext { width: 26px; height: 26px; border-radius: 6px; }
+.view { position: absolute; left: 0; top: 46px; right: 0; bottom: 0; overflow: hidden; background: #fff; }
+.cam { position: absolute; left: 0; top: 0; transform-origin: 0 0; }
+.cam img { position: absolute; left: 0; top: 0; display: block; }
+.panelcard { position: absolute; border-radius: 22px; overflow: hidden; background: #121212; box-shadow: 0 60px 120px rgba(0,0,0,.65), 0 0 0 1px rgba(255,255,255,.10), 0 0 90px rgba(43,222,134,.12); }
+.panelcard .view { top: 0; background: #121212; }
+
+/* highlights */
+.hl { position: absolute; border: 3px solid var(--mint); border-radius: 10px; box-shadow: 0 0 0 4px rgba(43,222,134,.15), 0 0 30px rgba(43,222,134,.45); opacity: 0; }
+.hl.coral { border-color: var(--coral); box-shadow: 0 0 0 4px rgba(243,114,127,.18), 0 0 34px rgba(243,114,127,.55); }
+.hl.amber { border-color: var(--amber); box-shadow: 0 0 0 4px rgba(255,164,43,.18), 0 0 34px rgba(255,164,43,.5); }
+.scan { position: absolute; left: 0; right: 0; height: 4px; background: var(--mint); box-shadow: 0 0 30px 8px rgba(43,222,134,.55), 0 0 120px 30px rgba(19,163,95,.35); opacity: 0; }
+
+/* chips, tags */
+.chip { display: inline-flex; align-items: center; gap: 10px; padding: 12px 22px; border-radius: 999px; border: 0; background: #2A2A2A; font: 600 22px/1 var(--sans); color: var(--ink); }
+.chip i { width: 9px; height: 9px; border-radius: 50%; background: var(--mint); box-shadow: 0 0 12px var(--mint); display: inline-block; }
+.tag { position: absolute; font: 700 30px/1 var(--mono); padding: 16px 22px; border-radius: 8px; background: rgba(243,114,127,.14); color: #FFB8C0; border: 1px solid rgba(243,114,127,.35); white-space: nowrap; }
+.bubble { position: absolute; left: 50%; width: 920px; margin-left: -460px; padding: 28px 34px; border-radius: 28px 28px 28px 8px; background: #1F1F1F; border: 0; font-size: 38px; line-height: 1.32; font-weight: 500; box-shadow: 0 30px 80px rgba(0,0,0,.4); }
+.bubble .from { font: 600 17px/1 var(--mono); color: var(--muted); letter-spacing: .12em; margin-bottom: 14px; }
+.hot { background-image: linear-gradient(rgba(243,114,127,.45), rgba(243,114,127,.45)); background-repeat: no-repeat; background-size: 0% 40%; background-position: 0 88%; }
+.redact { position: absolute; background: #000; border-radius: 6px; box-shadow: none; transform-origin: 0 50%; }
+
+/* logo */
+.logo { position: absolute; white-space: nowrap; font-weight: 820; letter-spacing: -.05em; }
+.logo .less { font-family: var(--serif); font-style: italic; font-weight: 700; color: var(--mint); letter-spacing: -.03em; }
+.logo .every { position: absolute; top: 0; color: #535353; font-weight: 700; }
+.logo .bar { position: absolute; background: #000; border-radius: 8px; transform-origin: 0 50%; }
+
+/* engine map */
+.node { position: absolute; width: 360px; padding: 22px 26px; border-radius: 18px; background: #181818; border: 0; box-shadow: 0 20px 60px rgba(0,0,0,.4); }
+.node b { display: block; font-size: 27px; font-weight: 720; letter-spacing: -.01em; }
+.node span { display: block; margin-top: 6px; font-size: 20px; color: var(--muted); }
+.core { position: absolute; width: 280px; height: 280px; border-radius: 50%; display: grid; place-items: center; text-align: center; }
+.core .ring { position: absolute; inset: 0; border-radius: 50%; background: conic-gradient(from 0deg, transparent, var(--mint), transparent 40%, var(--teal2), transparent 75%); -webkit-mask: radial-gradient(circle, transparent 62%, #000 63%); }
+.core .disc { position: absolute; inset: 18px; border-radius: 50%; background: radial-gradient(circle at 40% 35%, #1D3A2A, #0C140F); box-shadow: inset 0 0 40px rgba(43,222,134,.2), 0 0 80px rgba(43,222,134,.35); }
+.core .lbl { position: relative; font-weight: 760; font-size: 30px; line-height: 1.1; }
+.core .lbl small { display: block; font: 600 15px/1.8 var(--mono); letter-spacing: .2em; color: var(--mint); }
+
+/* cards */
+.card3 { position: absolute; width: 540px; border-radius: 18px; background: #181818; border: 1px solid #2A2A2A; padding: 22px; box-shadow: 0 40px 100px rgba(0,0,0,.5); }
+.card3 .host { font: 600 19px/1 var(--mono); color: var(--muted); letter-spacing: .06em; margin: 2px 0 16px; display: flex; justify-content: space-between; }
+.card3 .img { width: 496px; height: 312px; border-radius: 12px; background-size: cover; }
+.card3 .crop { margin-top: 16px; border-radius: 12px; background-repeat: no-repeat; }
+.stamp { position: absolute; padding: 18px 34px; border: 6px solid var(--mint); border-radius: 16px; color: var(--mint); font: 800 54px/1 var(--sans); letter-spacing: .04em; background: rgba(10,10,10,.86); box-shadow: 0 0 60px rgba(43,222,134,.4); }
+.flabel { position: absolute; font: 700 17px/1 var(--mono); padding: 7px 10px; border-radius: 7px; white-space: nowrap; }
+.flabel.keep { background: var(--mint); color: #04140B; }
+.flabel.hide { background: var(--coral); color: #fff; }
+.flabel.part { background: var(--amber); color: #2B1A02; }
+.frow .num { font: 600 20px/1 var(--sans); font-style: normal; color: #6A6A6A; display: inline-block; width: 34px; }
+.frow { display: flex; align-items: center; justify-content: space-between; padding: 16px 0; border-top: 1px solid var(--line); font-size: 26px; font-weight: 600; }
+.frow em { font: 700 17px/1 var(--mono); font-style: normal; padding: 8px 12px; border-radius: 8px; }
+.stat { position: absolute; width: 400px; text-align: left; }
+.stat .n { font-weight: 820; font-size: 150px; letter-spacing: -.05em; line-height: 1; }
+.stat .l { margin-top: 12px; font-size: 26px; color: var(--muted); line-height: 1.3; }
+.cursor { position: absolute; width: 34px; height: 44px; opacity: 0; filter: drop-shadow(0 6px 10px rgba(0,0,0,.5)); }
+.ripple { position: absolute; width: 80px; height: 80px; margin: -40px 0 0 -40px; border-radius: 50%; border: 3px solid var(--mint); opacity: 0; }
+.hud { position: absolute; top: 40px; font: 600 16px/1 var(--mono); letter-spacing: .22em; color: rgba(255,255,255,.6); text-transform: uppercase; opacity: 0; }
+.wall { position: absolute; font: 22px/1.75 var(--serif); color: rgba(255,255,255,.26); width: 760px; }
+.wall p { margin: 0 0 26px; }
+.wall .risk { color: rgba(234,246,244,.28); }
+.pills { display: flex; gap: 14px; flex-wrap: wrap; }
+.line-svg { position: absolute; left: 0; top: 0; overflow: visible; }
+</style>
+</head>
+<body>
+<div id="stage">
+  <div class="layer" id="bg">
+    <div class="orb" id="orb1" style="background: radial-gradient(circle, rgba(30,200,110,.30), transparent 65%);"></div>
+    <div class="orb" id="orb2" style="background: radial-gradient(circle, rgba(16,92,58,.42), transparent 65%);"></div>
+    <div class="orb" id="orb3" style="background: radial-gradient(circle, rgba(120,90,255,.12), transparent 65%);"></div>
+    <div id="grid"></div>
+  </div>
+  <div class="layer" id="scenes"></div>
+  <div class="hud" id="hud-l" style="left: 60px;">ShareLess</div>
+  <div class="hud" id="hud-r" style="right: 60px;"><span id="hud-dot" style="color:#2BDE86">●</span>&nbsp; On-device · No cloud</div>
+  <div id="flash"></div>
+  <div id="vig"></div>
+  <div id="grain"></div>
+  <div id="black"></div>
+  <div id="progress"></div>
+</div>
+<script src="/video/node_modules/gsap/dist/gsap.min.js"></script>
+<script src="/video/node_modules/gsap/dist/SplitText.min.js"></script>
+<script src="/video/node_modules/gsap/dist/CustomEase.min.js"></script>
+<script src="/video/compose.js"></script>
+</body>
+</html>

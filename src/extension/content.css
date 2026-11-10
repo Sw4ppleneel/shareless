@@ -1,0 +1,78 @@
+/* ShareLess on the page: dark, compact, out of the way. Everything is reset with all: initial. */
+.sl-flag-over { outline: 2px solid #F3727F !important; outline-offset: 3px !important; }
+.sl-flag-ask { outline: 2px solid #FFA42B !important; outline-offset: 3px !important; }
+
+.sl-badge {
+  all: initial; position: relative; display: inline-flex; align-items: center; gap: 7px; margin: 8px 0 0; padding: 6px 11px 6px 9px;
+  border-radius: 500px; background: #121212; color: #fff; cursor: help; max-width: 560px;
+  font: 600 12px/1.2 "SF Pro Display", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  box-shadow: 0 4px 14px rgba(0,0,0,.18);
+}
+.sl-badge::before { content: ""; flex: none; width: 7px; height: 7px; border-radius: 50%; background: #F3727F; }
+.sl-badge.ask::before { background: #FFA42B; }
+.sl-badge .sl-k { color: #B3B3B3; font-weight: 500; }
+.sl-badge .sl-why {
+  display: none; position: absolute; left: 0; top: calc(100% + 6px); z-index: 2147483646; width: 320px; padding: 10px 12px; border-radius: 10px;
+  background: #282828; color: #fff; font: 500 12.5px/1.45 "SF Pro Display", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; box-shadow: 0 12px 30px rgba(0,0,0,.4);
+}
+.sl-badge:hover .sl-why, .sl-badge:focus .sl-why { display: block; }
+
+#sl-pill {
+  all: initial; position: fixed; right: 18px; bottom: 18px; z-index: 2147483646; width: 330px; box-sizing: border-box;
+  background: #181818; color: #fff; border-radius: 14px; padding: 14px 16px 16px;
+  font: 13px/1.45 "SF Pro Display", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  box-shadow: 0 18px 50px rgba(0,0,0,.45), 0 0 0 1px rgba(255,255,255,.06);
+}
+#sl-pill * { box-sizing: border-box; }
+#sl-pill .sl-head { display: flex; align-items: center; gap: 10px; }
+#sl-pill .sl-mark { width: 30px; height: 30px; border-radius: 7px; flex: none; display: grid; place-items: center; background: linear-gradient(135deg, #2BDE86, #13A35F); }
+#sl-pill .sl-mark svg { width: 17px; height: 17px; display: block; }
+#sl-pill .sl-title { display: block; font-weight: 800; font-size: 14px; letter-spacing: -.01em; }
+#sl-pill .sl-sub { display: block; color: #B3B3B3; font-size: 12px; margin-top: 1px; }
+#sl-pill .sl-x { all: initial; margin-left: auto; cursor: pointer; color: #B3B3B3; font: 700 12px -apple-system, sans-serif; padding: 6px 10px; border-radius: 500px; }
+#sl-pill .sl-x:hover { color: #fff; background: #2A2A2A; }
+#sl-pill .sl-row { display: block; margin-top: 6px; color: #B3B3B3; }
+#sl-pill .sl-row b { color: #fff; font-weight: 800; margin-right: 2px; }
+#sl-pill .sl-trust { display: flex; align-items: baseline; gap: 6px; margin-top: 14px; color: #B3B3B3; font-weight: 600; }
+#sl-pill .sl-trust b { font-size: 24px; font-weight: 800; letter-spacing: -.03em; color: #fff; }
+#sl-pill .sl-band { margin-left: auto; font-weight: 700; font-size: 11px; padding: 4px 7px; border-radius: 4px; background: #2A2A2A; color: #B3B3B3; }
+#sl-pill .sl-high b { color: #F3727F; } #sl-pill .sl-high .sl-band { background: rgba(243,114,127,.16); color: #F3727F; }
+#sl-pill .sl-mixed b, #sl-pill .sl-unknown b { color: #FFA42B; } #sl-pill .sl-mixed .sl-band, #sl-pill .sl-unknown .sl-band { background: rgba(255,164,43,.16); color: #FFA42B; }
+#sl-pill .sl-low b { color: #2BDE86; } #sl-pill .sl-low .sl-band { background: rgba(43,222,134,.15); color: #2BDE86; }
+#sl-pill .sl-bar { display: block; height: 4px; border-radius: 2px; background: rgba(255,255,255,.16); margin: 8px 0 4px; overflow: hidden; }
+#sl-pill .sl-bar i { display: block; height: 100%; border-radius: 2px; background: #fff; }
+#sl-pill .sl-high .sl-bar i, #sl-pill .sl-bar.sl-high i { background: #F3727F; }
+#sl-pill .sl-dim { display: block; color: #8A8A8A; font-size: 12px; }
+#sl-pill .sl-list { display: block; margin-top: 10px; padding-top: 6px; border-top: 1px solid #2A2A2A; }
+#sl-pill .sl-actions { display: flex; gap: 8px; margin-top: 14px; }
+#sl-pill button {
+  all: initial; cursor: pointer; padding: 10px 16px; border-radius: 500px; background: #2BDE86; color: #04140B;
+  font: 700 12.5px/1 "SF Pro Display", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+#sl-pill button:hover { filter: brightness(1.08); }
+#sl-pill button.sl-ghost { background: transparent; color: #fff; box-shadow: inset 0 0 0 1px #535353; }
+
+.sl-guard {
+  all: initial; display: flex; gap: 10px; align-items: flex-start; margin: 8px 0; padding: 11px 14px; border-radius: 12px; max-width: 600px; box-sizing: border-box;
+  background: #181818; color: #fff; font: 500 12.5px/1.45 "SF Pro Display", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  box-shadow: 0 10px 28px rgba(0,0,0,.25), inset 3px 0 0 #F3727F;
+}
+.sl-guard::before { content: "!"; flex: none; width: 20px; height: 20px; border-radius: 50%; background: #F3727F; color: #121212; font: 900 13px/20px -apple-system, sans-serif; text-align: center; }
+.sl-guard b { font-weight: 800; }
+
+.sl-chip { all: initial; display: block; margin: 6px 0 8px; font: 13px/1.45 "SF Pro Display", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; max-width: 540px; }
+.sl-chip .sl-chip-head {
+  all: initial; cursor: pointer; display: inline-flex; align-items: center; gap: 7px; padding: 6px 12px 6px 9px; border-radius: 500px;
+  background: #121212; color: #fff; font: 600 12px/1.2 "SF Pro Display", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; box-shadow: 0 4px 14px rgba(0,0,0,.18);
+}
+.sl-chip .sl-chip-head::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: #FFA42B; }
+.sl-chip.sl-high .sl-chip-head::before { background: #F3727F; }
+.sl-chip .sl-chip-head span { color: #B3B3B3; font-weight: 500; }
+.sl-chip .sl-chip-body { margin-top: 8px; padding: 12px 14px; border-radius: 12px; background: #181818; color: #fff; box-shadow: 0 12px 30px rgba(0,0,0,.25); }
+.sl-chip .sl-chip-body div { display: block; margin: 0; padding: 7px 0; border-top: 1px solid #2A2A2A; color: #B3B3B3; font-size: 12.5px; }
+.sl-chip .sl-chip-body div:first-child { border-top: 0; padding-top: 0; }
+.sl-chip .sl-chip-body b { display: block; color: #fff; font-weight: 700; font-size: 13px; margin-bottom: 1px; }
+.sl-chip .sl-chip-deep {
+  all: initial; cursor: pointer; margin-top: 10px; display: inline-block; padding: 9px 14px; border-radius: 500px; background: #2BDE86; color: #04140B;
+  font: 700 12px/1 "SF Pro Display", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}

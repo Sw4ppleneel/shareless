@@ -1,0 +1,18 @@
+{
+  "manifest_version": 3,
+  "name": "ShareLess",
+  "version": "0.3.0",
+  "description": "Checks who's contacting you and what you're asked to hand over, then shares only what's needed. Runs on your device.",
+  "icons": { "16": "icons/16.png", "32": "icons/32.png", "48": "icons/48.png", "128": "icons/128.png" },
+  "action": { "default_popup": "panel.html", "default_icon": { "16": "icons/16.png", "32": "icons/32.png" } },
+  "side_panel": { "default_path": "panel.html?tab=site" },
+  "background": { "service_worker": "background.js", "type": "module" },
+  "content_scripts": [
+    { "matches": ["http://*/*", "https://*/*"], "js": ["content.js"], "css": ["content.css"], "run_at": "document_idle" }
+  ],
+  "permissions": ["storage", "contextMenus", "alarms", "sidePanel"],
+  "host_permissions": ["https://rdap.org/*", "https://raw.githubusercontent.com/openphish/*"],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self'"
+  }
+}

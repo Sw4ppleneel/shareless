@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Summer Internship Application 2026 | Campus Talent Program</title>
+  <style>
+    body { font: 15px/1.5 -apple-system, "Segoe UI", Roboto, sans-serif; background: #f1f3f8; margin: 0; padding: 24px 16px; color: #1d2433; }
+    form { max-width: 620px; margin: 0 auto; background: #fff; border-radius: 12px; padding: 24px; box-shadow: 0 2px 10px rgba(0,0,0,.06); }
+    h1 { margin-top: 0; font-size: 22px; }
+    .q { margin: 18px 0; }
+    label { display: block; font-weight: 600; margin-bottom: 4px; }
+    input[type=text], input[type=email], input[type=tel], select { width: 100%; padding: 9px; border: 1px solid #c9cfdb; border-radius: 8px; font: inherit; box-sizing: border-box; }
+    .consent { display: flex; gap: 8px; align-items: flex-start; font-size: 13px; margin: 10px 0; }
+    .consent label { font-weight: 400; }
+    button { background: #3a5bd9; color: #fff; border: 0; padding: 11px 20px; border-radius: 8px; font: 600 15px inherit; }
+    .fine { font-size: 12px; color: #6a7285; }
+  </style>
+</head>
+<body>
+  <!-- Demo page for ShareLess. Fictional company, no data is submitted anywhere. -->
+  <form onsubmit="event.preventDefault(); alert('Demo only: nothing was sent.');">
+    <h1>Summer Internship Application 2026</h1>
+    <p>You've been shortlisted! Complete this form within 24 hours to confirm your stipend of ₹15,000.</p>
+    <div class="q"><label for="n">Full name</label><input id="n" type="text" required></div>
+    <div class="q"><label for="e">Email</label><input id="e" type="email" required></div>
+    <div class="q"><label for="p">Phone (WhatsApp)</label><input id="p" type="tel" required></div>
+    <div class="q"><label for="c">College name</label><input id="c" type="text"></div>
+    <div class="q"><label for="r">Upload resume</label><input id="r" type="file"></div>
+    <div class="q"><label for="a">Aadhaar number</label><input id="a" type="text" required></div>
+    <div class="q"><label for="pan">PAN number</label><input id="pan" type="text"></div>
+    <div class="q"><label for="au">Upload Aadhaar card (front and back)</label><input id="au" type="file" accept="image/*" required></div>
+    <div class="q"><label for="f">Father's name</label><input id="f" type="text"></div>
+    <div class="q"><label for="d">Date of birth</label><input id="d" type="text" placeholder="DD/MM/YYYY"></div>
+    <div class="q"><label for="b">Bank account number (for stipend)</label><input id="b" type="text"></div>
+    <div class="q"><label for="r1">Friend 1 name and phone (refer 5 friends to get priority)</label><input id="r1" type="text"></div>
+    <div class="q"><label for="r2">Friend 2 name and phone</label><input id="r2" type="text"></div>
+    <div class="q"><label for="otp">Enter the OTP sent to your phone to verify</label><input id="otp" type="text"></div>
+    <div class="consent"><input type="checkbox" id="cs1" checked required><label for="cs1">I agree to receive calls, SMS and WhatsApp messages about offers from the company and its partners and affiliates, even if I am registered under DND.</label></div>
+    <div class="consent"><input type="checkbox" id="cs2" checked><label for="cs2">I consent to my information being shared with third parties for any other purpose as the company may deem fit.</label></div>
+    <p class="fine">By submitting this form you agree to our Terms and <a href="/privacy-policy.html">Privacy Policy</a>.</p>
+    <button type="submit">Submit application</button>
+  </form>
+</body>
+</html>

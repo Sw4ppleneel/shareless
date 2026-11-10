@@ -1,0 +1,30 @@
+body { width: 420px; min-height: 520px; }
+body.wide { width: auto; }
+header { padding: 16px 16px 12px; position: sticky; top: 0; background: linear-gradient(var(--bg) 80%, rgba(18,18,18,.92)); z-index: 2; }
+.brand { display: flex; align-items: center; gap: 10px; }
+.mark { width: 30px; height: 30px; border-radius: 7px; background: linear-gradient(135deg, #2BDE86, #13A35F); display: grid; place-items: center; flex: none; }
+.mark svg { width: 18px; height: 18px; }
+.tagline { margin: 6px 0 14px; font-size: 13px; color: var(--sub); }
+#ai-status { font-size: 12px; font-weight: 600; color: var(--sub); display: inline-flex; align-items: center; gap: 6px; }
+#ai-status .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 8px var(--accent); }
+#ai-status button { padding: 7px 12px; font-size: 12px; }
+nav { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; }
+nav::-webkit-scrollbar { display: none; }
+nav button { background: var(--s3); color: var(--text); padding: 8px 11px; font-weight: 600; font-size: 12.5px; white-space: nowrap; flex: none; }
+nav button:hover { transform: none; background: var(--s4); }
+nav button.on { background: var(--text); color: #000; }
+section { padding: 6px 16px 24px; }
+section > h2:first-child, #site-out > h2:first-child, #shares-out > h2:first-child { margin-top: 8px; }
+.host { font: 800 26px/1.1 var(--font); letter-spacing: -.03em; margin: 8px 0 2px; word-break: break-all; }
+.eyebrow { font-size: 12px; font-weight: 700; color: var(--sub); }
+#sender { margin-bottom: 8px; }
+.share-card { background: var(--s1); border-radius: 12px; padding: 14px; margin: 8px 0; }
+.share-card .t { font-weight: 700; font-size: 15px; }
+.share-card .m { color: var(--sub); font-size: 12.5px; margin-top: 2px; }
+.share-card .k { margin-top: 10px; display: grid; gap: 4px; font-size: 13px; }
+.share-card .k span { color: var(--sub); }
+.erase-out textarea { font-size: 12.5px; line-height: 1.5; margin-top: 12px; }
+.set { display: flex; gap: 12px; align-items: flex-start; padding: 10px 0; color: var(--text); font-weight: 500; font-size: 13.5px; }
+.set + .set { border-top: 1px solid var(--line); }
+.aftercare { margin-top: 18px; }
+.aftercare summary { color: var(--text); font-size: 14px; }
