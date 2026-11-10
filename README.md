@@ -6,6 +6,8 @@ ShareLess is a Chrome extension for India that sits between you and every form, 
 
 Everything runs on your device. No account, no server, and your documents never leave Chrome.
 
+[![Watch the ShareLess demo (3 min)](docs/img/demo-film.jpg)](docs/media/ShareLess_Demo.mp4)
+
 <p>
   <img src="docs/img/payslip.png" width="66%" alt="Share Advisor on a payslip for a job application: name and pay kept; PAN, UAN, PF and account numbers hidden">
   <img src="docs/img/panel-site.png" width="30%" alt="The panel: site trust with evidence coverage, and the form's over-asks explained">
@@ -166,16 +168,6 @@ npm run e2e   # 31 end-to-end checks: loads dist/ into a throwaway Chrome for Te
 
 Chrome for Testing has no built-in model, so the e2e test swaps in a scripted stand-in. The stand-in invents findings on purpose, and the test checks that grounding drops them. The model path is tested for wiring and grounding, not for model quality.
 
-## Demo film
-
-`sh video/make.sh 60` builds a 3-minute 1080p60 film from the real build:
-- `video/capture.mjs` drives `dist/` in a throwaway Chrome and records screenshots plus the box of every highlighted element.
-- `video/compose.js` animates them with GSAP.
-- `video/render.mjs` renders the film frame by frame.
-- `video/audio.mjs` synthesizes the score and sound effects.
-
-As in the e2e test, findings marked AI come from the stand-in model.
-
 ## Layout
 
 ```
@@ -197,9 +189,8 @@ src/core/            Pure logic, shared by the extension and the tests
   lookup.js          The only network code: RDAP domain age, logged
 src/extension/       MV3 extension: content script, chat adapters, panel, Share Advisor, background
 demo/                Fictional form, policy, chat page, synthetic documents
-docs/                Research and screenshots
+docs/                Research, screenshots and the demo video
 scripts/             Build, e2e, asset fetch, sample generator
-video/               Demo film pipeline
 ```
 
 ## Known limits
