@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Campus Cloud Scholars | Personal Information</title>
+  <style>
+    body { font: 15px/1.5 -apple-system, "Segoe UI", Roboto, sans-serif; background: #f0ebf8; margin: 0; padding: 24px 16px; color: #1d2433; }
+    form { max-width: 620px; margin: 0 auto; }
+    .q, header { background: #fff; border-radius: 10px; padding: 20px 24px; margin: 12px 0; box-shadow: 0 1px 4px rgba(0,0,0,.08); }
+    header { border-top: 10px solid #5b4bdb; } h1 { margin: 0; font-size: 24px; font-weight: 500; }
+    label { display: block; font-weight: 600; margin-bottom: 8px; }
+    input[type=text] { width: 50%; padding: 8px 0; border: 0; border-bottom: 1px solid #c9cfdb; font: inherit; }
+    .preview { margin-top: 10px; font-size: 13px; color: #1a7f4b; }
+    button { background: #5b4bdb; color: #fff; border: 0; padding: 10px 22px; border-radius: 6px; font: 600 14px inherit; }
+  </style>
+</head>
+<body>
+  <!-- Demo page for ShareLess: the kind of joining form a real programme sends after selection.
+       Fictional programme, nothing is submitted. The title names no purpose, on purpose. -->
+  <form onsubmit="event.preventDefault(); alert('Demo only: nothing was sent.');">
+    <header><h1>Campus Cloud Scholars | Personal Information</h1></header>
+    <div class="q"><label for="c">College Name *</label><input id="c" type="text" required></div>
+    <div class="q"><label for="u">University Name *</label><input id="u" type="text" required></div>
+    <div class="q"><label for="f">First Name *</label><input id="f" type="text" required></div>
+    <div class="q"><label for="l">Last Name *</label><input id="l" type="text" required></div>
+    <div class="q"><label for="h">Account Holder Name *</label><input id="h" type="text" required></div>
+    <div class="q"><label for="acc">Account Number *</label><input id="acc" type="text" required></div>
+    <div class="q"><label for="i">IFSC Code *</label><input id="i" type="text" required></div>
+    <div class="q"><label for="b">Branch Name *</label><input id="b" type="text" required></div>
+    <div class="q" id="cheque-q"><label for="ch">Cancelled cheque/ Passbook *</label><input id="ch" type="file" accept="image/*,application/pdf" required></div>
+    <div class="q"><label for="pan">PAN Card Number *</label><input id="pan" type="text" required></div>
+    <div class="q"><label for="aad">Aadhar Card Number *</label><input id="aad" type="text" required></div>
+    <button>Submit</button>
+  </form>
+  <script>
+    // Like most upload widgets, this one redraws part of the page once a file is picked.
+    document.getElementById('ch').addEventListener('change', (e) => {
+      document.querySelector('#cheque-q .preview')?.remove();
+      if (!e.target.files.length) return;
+      setTimeout(() => {
+        const p = document.createElement('div');
+        p.className = 'preview';
+        p.textContent = `✓ ${e.target.files[0].name} · this is what gets uploaded.`;
+        document.getElementById('cheque-q').appendChild(p);
+      }, 300);
+    });
+  </script>
+</body>
+</html>

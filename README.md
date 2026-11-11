@@ -53,6 +53,7 @@ The Advisor also covers two common snags:
 **Form check.** On any page with a form:
 - **Over-asks:** fields asking for more than the form's purpose needs are marked "Probably not needed" or "Ask why", with the reason on hover.
 - **Type guard:** typing an Aadhaar or PAN number into one of those fields warns you on the spot.
+- **Joining forms that don't say so:** a form with no stated purpose that asks for account number, IFSC, a cancelled cheque and PAN gets one question: have you already been selected, through a channel you checked? "Yes" makes bank details and PAN expected (the Aadhaar number is still questioned). "No" keeps them flagged.
 - **Privacy policy:** it's found and read automatically. Risky clauses are quoted, for example "partners and affiliates", calls even if you're on DND, "consent is irrevocable". So are consent boxes ticked for you.
 
 **Site trust.** A 1–99 score from named signals, shown with **evidence coverage** (how much was actually checked) and **why this score**. The signals include:
@@ -82,6 +83,10 @@ The rules catch these patterns:
 - APK links
 - time pressure
 - free-mail senders making job offers
+
+A message is read with its conversation: the subject, the rest of the thread, and whether you've replied. Scheduling, form and meeting links (Calendly, Google Forms, Zoom) aren't concerns, and one rule firing on several links counts once.
+
+**Vouch for a sender.** If you know where a sender came from, say so on the chip: "introduced by my college", "I applied and was interviewed". ShareLess then stops questioning where their messages come from, and a form opened from one of their messages is treated as a joining form. It never clears what a message asks for: fees, OTPs, screen sharing and app installs stay flagged. Vouched senders are listed in the **Privacy** tab and stored only on your device.
 
 Job messages get a **check the company** list: the MCA lookup, the email domain against the company's site, the company's own careers page, and never paying.
 
@@ -154,16 +159,17 @@ python3 -m http.server 8080 -d demo
 4. **Payslip.** `demo/sample-payslip.pdf` with *Job application*: name and pay are kept; PAN, UAN, PF and account numbers are hidden.
 5. **Offer letter PDF.** `demo/sample-offer-letter.pdf` with *Survey*: it uses the PDF's text layer, catches every repeat of the name, and flattens the output.
 6. **Messages.** Panel → **Message** → **Try a sample**. Then open `localhost:8080/whatsapp-fixture.html?sl-adapter=whatsapp`.
-7. **After sharing.** **My shares** → *Ask them to delete it*, and *Already shared or paid?*
-8. **Privacy.** The **Privacy** tab lists everything that left the device.
+7. **A real joining form.** Open `localhost:8080/gmail-fixture.html?sl-adapter=gmail`, vouch for the sender on the chip, then follow the form link. Or open `localhost:8080/payout-form.html` directly and answer the question.
+8. **After sharing.** **My shares** → *Ask them to delete it*, and *Already shared or paid?*
+9. **Privacy.** The **Privacy** tab lists everything that left the device.
 
 Every sample document is synthetic (`npm run sample` regenerates them). Never demo with a real ID.
 
 ## Tests
 
 ```bash
-npm test      # 51 unit tests: detectors, document model, disclosure, scoring, grounding, the erasure letter
-npm run e2e   # 31 end-to-end checks: loads dist/ into a throwaway Chrome for Testing profile and runs every flow
+npm test      # 61 unit tests: detectors, document model, disclosure, scoring, grounding, the erasure letter
+npm run e2e   # 40 end-to-end checks: loads dist/ into a throwaway Chrome for Testing profile and runs every flow
 ```
 
 Chrome for Testing has no built-in model, so the e2e test swaps in a scripted stand-in. The stand-in invents findings on purpose, and the test checks that grounding drops them. The model path is tested for wiring and grounding, not for model quality.
@@ -197,7 +203,8 @@ scripts/             Build, e2e, asset fetch, sample generator
 
 - **Desktop only.** Loan apps, APKs, SMS and calls mostly happen on phones. An Android version is the biggest open gap.
 - **Not calibrated.** Scoring weights and the disclosure table are reasoned defaults. The next step is a labelled set to fit them and report precision and recall.
-- **Chat adapters** depend on Gmail, Google Messages and WhatsApp Web markup, which changes without notice. They fail quietly.
+- **Chat adapters** depend on Gmail, Google Messages and WhatsApp Web markup, which changes without notice. They fail quietly. Thread context in Gmail covers the open conversation only, not earlier threads from the same sender; that is what vouching is for.
+- **Uploads that start immediately.** The upload prompt can only pull a file back out of a standard file field. A page that sends the file the moment you pick it has already sent it.
 - **Documents.**
   - OCR is English only, and blurry phone photos reduce recall; the leak test is the backstop.
   - Only the first 6 PDF pages are read.

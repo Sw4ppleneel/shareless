@@ -7,7 +7,7 @@ export const FIELD_TYPES = [
   { id: 'password', label: 'Password', tier: 'critical', re: /\bpass(word|code)?\b|\bpwd\b/i, types: ['password'] },
   { id: 'aadhaar', label: 'Aadhaar number', tier: 'sensitive', re: /\baadha?a?r|\buid(ai)?\b|\bvid\b/i },
   { id: 'pan', label: 'PAN', tier: 'sensitive', re: /\bpan\b|pan[\s_-]?(no|number|card)|permanent\s+account/i },
-  { id: 'bank', label: 'Bank account or IFSC', tier: 'sensitive', re: /\b(bank|account\s*(no|number)|acc(t)?[\s_-]?no|ifsc|cheque)\b/i },
+  { id: 'bank', label: 'Bank account or IFSC', tier: 'sensitive', re: /\b(bank|account\s*(no|number)|acc(t)?[\s_-]?no|ifsc|cheque|passbook)\b/i },
   { id: 'card', label: 'Card number', tier: 'critical', re: /\b(card\s*(no|number)|credit\s*card|debit\s*card|cc[\s_-]?num)/i, autocomplete: ['cc-number', 'cc-csc'] },
   { id: 'id_upload', label: 'ID document upload', tier: 'sensitive', re: /\b(aadha?a?r|pan|passport|id\s*proof|identity|kyc|voter|licen[cs]e|address\s*proof)\b/i, types: ['file'] },
   { id: 'passport', label: 'Passport number', tier: 'sensitive', re: /\bpassport\b/i },
@@ -47,6 +47,13 @@ export const PURPOSES = [
 // The rubric. For each purpose: fields that are expected, fields worth asking about,
 // and anything else in a sensitive tier is treated as an over-ask.
 // 'never' fields are flagged on every form except where noted.
+// Not matched by wording. A form with no stated purpose that asks for the things a payout needs
+// (account, IFSC, cheque, PAN) is either a real joining form or a scam, and the page alone can't
+// say which. So it gets its own purpose and one question for the person filling it in.
+export const PAYOUT = { id: 'payout', label: 'Payout or joining details' };
+const ONBOARDING_ID = 'onboarding';
+export const SELECTED_QUESTION = 'This form collects what a payout needs. Have you already been selected, and did that come through a channel you checked (your college, an interview, the organisation\'s own site)?';
+
 export const RUBRIC = {
   never: ['otp', 'card', 'password'],
   neverExcept: { otp: ['login', 'payment', 'kyc'], card: ['payment'], password: ['login', 'newsletter', 'kyc'] },
@@ -55,7 +62,8 @@ export const RUBRIC = {
     payment: ['name', 'email', 'phone', 'address', 'city', 'card', 'otp'],
     kyc: ['name', 'email', 'phone', 'dob', 'gender', 'address', 'city', 'aadhaar', 'pan', 'bank', 'id_upload', 'photo', 'parents', 'income', 'passport', 'otp', 'password', 'marital'],
     job: ['name', 'email', 'phone', 'resume', 'education', 'city', 'social'],
-    onboarding: ['name', 'email', 'phone', 'dob', 'gender', 'address', 'city', 'aadhaar', 'pan', 'bank', 'id_upload', 'photo', 'parents', 'education', 'resume', 'passport', 'marital'],
+    onboarding: ['name', 'email', 'phone', 'dob', 'gender', 'address', 'city', 'pan', 'bank', 'id_upload', 'photo', 'parents', 'education', 'resume', 'passport', 'marital'],
+    payout: ['name', 'email', 'phone', 'education', 'city', 'resume'],
     event: ['name', 'email', 'phone', 'education', 'city'],
     contest: ['name', 'email'],
     survey: ['email', 'education', 'city'],
@@ -65,7 +73,8 @@ export const RUBRIC = {
   },
   askWhy: {
     job: ['dob', 'gender', 'address', 'photo', 'parents', 'income'],
-    onboarding: ['income', 'caste_religion', 'social'],
+    onboarding: ['aadhaar', 'income', 'caste_religion', 'social'],
+    payout: ['bank', 'pan', 'aadhaar', 'id_upload', 'dob', 'gender', 'address', 'photo', 'parents'],
     event: ['dob', 'gender', 'social'],
     contest: ['phone', 'city', 'social'],
     survey: ['name', 'phone', 'dob', 'gender'],
@@ -89,8 +98,31 @@ const REASONS = {
   password: 'A password field on a form that is not a sign-in or account creation is a red flag.',
 };
 
+// Why a field is worth asking about, where the generic line would mislead.
+const ASK_REASONS = {
+  onboarding: {
+    aadhaar: 'Paying a stipend or salary needs your bank details and PAN, not your Aadhaar number. Employers mainly need it for PF enrolment in a salaried job. Ask which rule requires it, or offer a masked Aadhaar.',
+  },
+  payout: {
+    bank: 'Expected once you have been selected and have checked who is asking. Not before.',
+    pan: 'Expected for tax on a payout once you have been selected and have checked who is asking. Not before.',
+    id_upload: 'Reasonable for joining once you have been selected. Mask what the form does not need before you upload.',
+    aadhaar: 'A payout needs your bank details and PAN, not your Aadhaar number. Ask which rule requires it, or offer a masked Aadhaar.',
+  },
+};
+
+// "a job or internship application form", "an event or webinar registration form".
+export function formPhrase(purpose) {
+  if (!purpose || purpose.id === 'unknown') return 'a form with no stated purpose';
+  const label = purpose.label.replace(/\s*\(.*\)\s*$/, '');
+  const noun = /^[A-Z]{2}/.test(label) ? label : label[0].toLowerCase() + label.slice(1);
+  return `${/^[aeiou]/i.test(noun) ? 'an' : 'a'} ${noun} form`;
+}
+
+const hayOf = (f) => [f.label, f.name, f.id, f.placeholder, f.ariaLabel].filter(Boolean).join(' ');
+
 export function classifyField(f) {
-  const hay = [f.label, f.name, f.id, f.placeholder, f.ariaLabel].filter(Boolean).join(' ');
+  const hay = hayOf(f);
   if (f.type === 'file') {
     const upload = FIELD_TYPES.find((t) => t.id === 'id_upload');
     if (upload.re.test(hay)) return upload;
@@ -111,12 +143,38 @@ export function inferPurpose(context) {
 }
 
 export function analyzeForm({ context = {}, fields = [], consents = [] }) {
-  const purpose = context.purpose ? PURPOSES.find((p) => p.id === context.purpose) || inferPurpose(context) : inferPurpose(context);
+  let purpose = context.purpose ? PURPOSES.find((p) => p.id === context.purpose) || inferPurpose(context) : inferPurpose(context);
+
+  // Fields are read alone first, then against their neighbours: "Branch name" beside an
+  // IFSC code or account number is the bank's branch, not a college branch.
+  const bankType = FIELD_TYPES.find((t) => t.id === 'bank');
+  const kinds = fields.map(classifyField);
+  kinds.forEach((k, i) => {
+    if (k?.id !== 'education') return;
+    const hay = hayOf(fields[i]);
+    if (!/\bbranch\b/i.test(hay) || /\b(college|university|institute|degree|course|stream|department|engineering|study)\b/i.test(hay)) return;
+    if ([i - 2, i - 1, i + 1, i + 2].some((j) => kinds[j]?.id === 'bank')) kinds[i] = bankType;
+  });
+
+  // A payout form that doesn't say what it is. context.selected is the person's answer to
+  // SELECTED_QUESTION; context.vouched means the form was opened from a sender they vouched for.
+  let question = null;
+  const bankFields = kinds.filter((k) => k?.id === 'bank').length;
+  const payoutCluster = bankFields >= 2 || (bankFields === 1 && kinds.some((k) => k?.id === 'pan'));
+  if (purpose.id === 'unknown' && payoutCluster) {
+    if (context.vouched || context.selected === true) purpose = PURPOSES.find((p) => p.id === ONBOARDING_ID);
+    else if (context.selected !== false) {
+      purpose = PAYOUT;
+      question = { id: 'selected', text: SELECTED_QUESTION };
+    }
+  }
+
   const expected = RUBRIC.expected[purpose.id] || RUBRIC.expected.unknown;
   const askWhy = RUBRIC.askWhy[purpose.id] || [];
+  const phrase = formPhrase(purpose);
 
   const results = fields.map((f, index) => {
-    const kind = classifyField(f);
+    const kind = kinds[index];
     if (!kind) return { index, field: f, kind: null, level: 'unknown' };
     let level;
     if (RUBRIC.never.includes(kind.id) && !(RUBRIC.neverExcept[kind.id] || []).includes(purpose.id)) level = 'over_ask';
@@ -125,9 +183,9 @@ export function analyzeForm({ context = {}, fields = [], consents = [] }) {
     else if (['sensitive', 'critical'].includes(kind.tier)) level = 'over_ask';
     else level = 'ask_why';
     const reason = level === 'over_ask'
-      ? (REASONS[kind.id] || `A ${purpose.label.toLowerCase()} form doesn't usually need your ${kind.label.toLowerCase()}.`)
+      ? (REASONS[kind.id] || `${phrase[0].toUpperCase()}${phrase.slice(1)} doesn't usually need your ${kind.label.toLowerCase()}.`)
       : level === 'ask_why'
-        ? `Not usually needed for a ${purpose.label.toLowerCase()} form. Skip it if it's optional, or ask why they want it.`
+        ? (ASK_REASONS[purpose.id]?.[kind.id] || `Not usually needed for ${phrase}. Skip it if it's optional, or ask why they want it.`)
         : null;
     return { index, field: f, kind: { id: kind.id, label: kind.label, tier: kind.tier }, level, required: !!f.required, reason };
   });
@@ -139,6 +197,7 @@ export function analyzeForm({ context = {}, fields = [], consents = [] }) {
 
   return {
     purpose,
+    question,
     fields: results,
     consentFlags,
     consentLines,

@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>Onboarding session - student@example.com - Gmail</title>
+<style>body{font:14px -apple-system,sans-serif;background:#fff;padding:24px;max-width:760px}h2{font-weight:400;font-size:22px}.adn,.kv{border-top:1px solid #e3e3e3;padding:14px 0}.gD{font-weight:700}.kv{color:#5f6368}</style></head>
+<body>
+  <!-- Mimics Gmail's conversation markup so the adapter can be tested. Open with ?sl-adapter=gmail
+       Fictional sender and programme. Add &history=1 for an earlier message that mentions the interview. -->
+  <h2 class="hP">Campus Cloud Scholars onboarding session</h2>
+  <div id="earlier"></div>
+  <div class="adn">
+    <span class="gD" email="recruitment@brightpath-campus.com">Campus Cloud Scholars</span>
+    <div class="a3s">Hi Asha,<br><br>Congratulations, you have been selected for the Campus Cloud Scholars programme.<br>
+      Book your onboarding slot: https://calendly.com/brightpath/onboarding<br>
+      Fill in your details here: <a id="form-link" href="payout-form.html" target="_blank" rel="noopener">Personal information form</a><br>
+      More about us: https://www.brightpath-media.com<br><br>Regards,<br>Programme team</div>
+  </div>
+  <script>
+    if (new URLSearchParams(location.search).has('history')) {
+      document.getElementById('earlier').innerHTML = '<div class="kv"><span email="recruitment@brightpath-campus.com">Campus Cloud Scholars</span> Thanks for attending the interview on Monday. We will share results this week.</div>';
+    }
+  </script>
+</body>
+</html>

@@ -60,3 +60,63 @@ test('consent summary counts lines, not flags', () => {
   assert.equal(r.summary.consent, 1);
   assert.ok(r.consentLines[0].flags.length >= 3);
 });
+
+// A real joining form: no purpose in the title, bank details, PAN and Aadhaar all required.
+const payoutForm = (context = {}) => analyzeForm({
+  context: { title: 'Campus Cloud Scholars | Personal Information', ...context },
+  fields: [
+    { label: 'College Name' }, { label: 'First Name' }, { label: 'Account Number' }, { label: 'IFSC Code' }, { label: 'Branch Name' },
+    { label: 'Cancelled cheque/ Passbook', type: 'file' }, { label: 'PAN Card Number' }, { label: 'Aadhar Card Number' },
+  ],
+});
+
+test('a payout form with no stated purpose asks one question instead of calling everything an over-ask', () => {
+  const r = payoutForm();
+  assert.equal(r.purpose.id, 'payout');
+  assert.ok(r.question?.text.includes('selected'));
+  assert.equal(r.summary.overAsk, 0);
+  assert.equal(level(r, 'Account Number'), 'ask_why');
+  assert.equal(level(r, 'PAN Card Number'), 'ask_why');
+});
+
+test('answering yes makes it a joining form: bank and PAN expected, Aadhaar number still questioned', () => {
+  const r = payoutForm({ selected: true });
+  assert.equal(r.purpose.id, 'onboarding');
+  assert.equal(r.question, null);
+  for (const l of ['College Name', 'Account Number', 'IFSC Code', 'Branch Name', 'Cancelled cheque/ Passbook', 'PAN Card Number']) assert.equal(level(r, l), 'expected', l);
+  assert.equal(level(r, 'Aadhar Card Number'), 'ask_why');
+  assert.match(r.fields.find((f) => f.field.label === 'Aadhar Card Number').reason, /bank details and PAN/);
+});
+
+test('answering no keeps the strict reading, and a vouched sender counts as yes', () => {
+  const no = payoutForm({ selected: false });
+  assert.equal(no.purpose.id, 'unknown');
+  assert.equal(level(no, 'Account Number'), 'over_ask');
+  assert.equal(payoutForm({ vouched: { key: 'example.com', reason: 'Introduced by my college' } }).purpose.id, 'onboarding');
+});
+
+test('an application form asking for bank details is not offered the question', () => {
+  const r = analyzeForm({ context: { title: 'Internship application' }, fields: [{ label: 'Account Number' }, { label: 'IFSC Code' }, { label: 'PAN' }] });
+  assert.equal(r.purpose.id, 'job');
+  assert.equal(r.question, null);
+  assert.equal(level(r, 'Account Number'), 'over_ask');
+});
+
+test('"Branch name" is the bank branch beside bank fields and a college branch otherwise', () => {
+  const kind = (r, label) => r.fields.find((f) => f.field.label === label).kind.id;
+  assert.equal(kind(payoutForm(), 'Branch Name'), 'bank');
+  const college = analyzeForm({ context: { title: 'Hackathon registration' }, fields: [{ label: 'College' }, { label: 'Branch' }, { label: 'Year of study' }] });
+  assert.equal(kind(college, 'Branch'), 'education');
+  const both = analyzeForm({ context: {}, fields: [{ label: 'IFSC Code' }, { label: 'Branch of study' }] });
+  assert.equal(kind(both, 'Branch of study'), 'education');
+});
+
+test('purpose wording reads as a sentence', async () => {
+  const { formPhrase, PURPOSES } = await import('../src/core/forms.js');
+  assert.equal(formPhrase({ id: 'unknown', label: 'Unclear purpose' }), 'a form with no stated purpose');
+  assert.equal(formPhrase(PURPOSES.find((p) => p.id === 'event')), 'an event or webinar registration form');
+  assert.equal(formPhrase(PURPOSES.find((p) => p.id === 'kyc')), 'a KYC or account opening form');
+  assert.equal(formPhrase(PURPOSES.find((p) => p.id === 'onboarding')), 'a joining or background verification form');
+  const r = analyzeForm({ context: {}, fields: [{ label: 'Phone', type: 'tel' }, { label: 'Email', type: 'email' }] });
+  assert.ok(!/\ba unclear\b/.test(r.fields[0].reason));
+});

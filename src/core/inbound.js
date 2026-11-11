@@ -16,6 +16,25 @@ const KNOWN_BRANDS = {
   'indiapost': 'indiapost.gov.in', 'irctc': 'irctc.co.in',
 };
 
+// Shared tools that real organisations of every size link to. Anyone can make a page on them,
+// so a link there proves nothing either way: it isn't a warning sign and it isn't a reference.
+export const TOOL_HOSTS = [
+  'calendly.com', 'cal.com', 'zoom.us', 'meet.google.com', 'teams.microsoft.com', 'teams.live.com', 'webex.com',
+  'forms.gle', 'docs.google.com', 'drive.google.com', 'forms.office.com', 'typeform.com', 'tally.so', 'jotform.com',
+  'airtable.com', 'notion.site', 'notion.so', 'luma.com', 'lu.ma',
+];
+const isToolHost = (host) => TOOL_HOSTS.some((h) => host === h || host.endsWith('.' + h));
+
+// Who a "vouch" is stored against: the whole domain for an organisation, the single address
+// for free mail (vouching for one gmail.com sender must not cover all of gmail.com).
+export function vouchKey(sender) {
+  const s = parseSender(sender);
+  if (!s) return null;
+  if (s.kind === 'email') return FREE_MAIL.includes(s.domain) ? s.address : registrableDomain(s.domain);
+  if (s.kind === 'phone') return `tel:${s.number}`;
+  return null;
+}
+
 // Each ask pattern describes something the message wants from you.
 const ASKS = [
   { id: 'payment', label: 'Asks you to pay', re: /\b(registration|security|training|processing|onboarding|refundable|verification|joining|kit|laptop|id\s*card|exam|re-?test|retake|certificate|interview|slot\s+booking)\s+(fee|deposit|charge|amount)s?\b|\b(fee|charges?|deposit)\s+(for|of)\s+(the\s+)?(offer\s+letter|joining\s+kit|laptop|verification|training|id\s*card|certificate)\b|\bpay\s+(rs\.?|inr|₹)|\b(₹|rs\.?|inr)\s?\d[\d,]*\b.*\b(fee|pay|deposit)\b|\bpay(ment)?\s+(via|through|on)\s+(upi|gpay|phonepe|paytm)\b/i,
@@ -111,7 +130,16 @@ function parseSender(sender) {
   return { kind: 'name', name: sender.trim() };
 }
 
-export function analyzeMessage(text, { sender = '' } = {}) {
+/**
+ * Context beyond the one message, all optional:
+ *   subject  the email subject
+ *   thread   text of the other messages in the same conversation
+ *   replied  you have written back in this conversation
+ *   vouched  { reason } when you have said you know this sender
+ * History and vouching answer "where did this come from?". They never clear what a message
+ * asks for: a fee, an OTP or screen sharing is flagged however long the thread is.
+ */
+export function analyzeMessage(text, { sender = '', subject = '', thread = [], replied = false, vouched = null } = {}) {
   const checks = [];
   const claims = CLAIMS.filter((c) => c.re.test(text)).map(({ id, label }) => ({ id, label }));
   const asks = ASKS.filter((a) => a.re.test(text));
@@ -155,14 +183,22 @@ export function analyzeMessage(text, { sender = '' } = {}) {
     if (look) problems.push(`looks like ${look.brand} but is not ${look.official}`);
     if (RISKY_TLDS.includes(dom.split('.').pop())) problems.push(`uses .${dom.split('.').pop()}, an ending often used by throwaway sites`);
     if (u.explicitScheme && !u.https) problems.push('is not https');
-    if (s?.kind === 'email' && !FREE_MAIL.includes(s.domain) && registrableDomain(s.domain) !== dom && !SHORTENERS.includes(dom) && claimsOpportunity) {
-      problems.push(`does not match the sender's domain (${s.domain})`);
+    // Going somewhere other than the sender's own domain is weak evidence on its own: it is
+    // scored lightly, skipped for shared tools, and dropped for a sender you vouched for.
+    const tool = isToolHost(u.host);
+    let weak = false;
+    if (!problems.length && !tool && !vouched && s?.kind === 'email' && !FREE_MAIL.includes(s.domain) && registrableDomain(s.domain) !== dom && claimsOpportunity) {
+      problems.push(`goes to a different domain than the sender's (${s.domain})`);
+      weak = true;
     }
     checks.push({
       id: `link:${u.raw}`, label: `Link: ${u.host}`,
       status: problems.length ? STATUS.CONCERN : STATUS.UNVERIFIED,
-      detail: problems.length ? `This link ${problems.join('; ')}.` : 'Nothing odd in the link itself. Checking how long the domain has existed.',
+      detail: problems.length ? `This link ${problems.join('; ')}.`
+        : tool ? 'A shared tool for scheduling, forms or meetings. Anyone can make a page on it, so it says nothing about who is behind this one.'
+          : 'Nothing odd in the link itself. Checking how long the domain has existed.',
       lookup: dom,
+      ...(weak ? { weak: true } : {}),
     });
   }
 
@@ -178,17 +214,31 @@ export function analyzeMessage(text, { sender = '' } = {}) {
     checks.push({ id: 'no_evidence', label: 'Evidence for the offer', status: STATUS.UNVERIFIED,
       detail: 'The offer comes with no official link or company email to check. Look the role up on the company\'s own careers page.' });
   }
-  if (claims.some((c) => c.id === 'selected') && !/\b(interview|assessment|test|round|application\s+(id|number))\b/i.test(text)) {
+  // The process may be in the subject or earlier in the conversation, not in this one message.
+  const history = [subject, text, ...thread].filter(Boolean).join('\n');
+  const processSeen = /\b(interview\w*|assessment|test|round|application\s+(id|number))\b/i.test(history);
+  if (claims.some((c) => c.id === 'selected') && !processSeen && !replied && !vouched) {
     checks.push({ id: 'unprompted', label: 'Selection without a process', status: STATUS.CONCERN,
-      detail: 'Says you were selected but mentions no interview, test or application ID. Did you actually apply?' });
+      detail: 'Says you were selected, but nothing in this conversation mentions an interview, test or application ID. Did you actually apply?' });
+  }
+  if (vouched) {
+    checks.push({ id: 'vouched', label: 'You vouched for this sender', status: STATUS.CONSISTENT,
+      detail: `${vouched.reason ? `${vouched.reason}. ` : ''}Where this came from is no longer questioned. Anything it asks for still is.` });
   }
 
   return { claims, checks, domains, verdict: verdict(checks) };
 }
 
 // Deliberately never says "safe".
+// One rule firing on several links is one concern, not several.
+export function countConcerns(checks) {
+  const c = checks.filter((x) => x.status === STATUS.CONCERN);
+  const links = c.filter((x) => x.id.startsWith('link:')).length;
+  return c.length - Math.max(0, links - 1);
+}
+
 export function verdict(checks) {
-  const concerns = checks.filter((c) => c.status === STATUS.CONCERN).length;
+  const concerns = countConcerns(checks);
   const unverified = checks.filter((c) => c.status === STATUS.UNVERIFIED).length;
   if (concerns >= 3) return { level: 'high', text: `${concerns} concerns. Don't pay, share ID or add anyone until you've verified this through an official channel.` };
   if (concerns > 0) return { level: 'medium', text: `${concerns} concern${concerns > 1 ? 's' : ''} found. Verify before you act.` };
@@ -215,7 +265,10 @@ export function scoreMessage(result, { model = null, phishingHits = 0, feedCheck
       if (c.status === STATUS.CONCERN) o.sender_concern = true;
       else if (c.status === STATUS.CONSISTENT) o.sender_registered = true;
     }
-    if (c.id.startsWith('link:')) o.link_concern = o.link_concern || c.status === STATUS.CONCERN;
+    if (c.id.startsWith('link:')) {
+      if (c.weak) o.link_mismatch = true;
+      else o.link_concern = o.link_concern || c.status === STATUS.CONCERN;
+    }
     if (c.id.startsWith('age:')) {
       if (c.status === STATUS.CONCERN) o.domain_new = true;
       else if (c.status === STATUS.CONSISTENT) o.domain_established = o.domain_established ?? true;

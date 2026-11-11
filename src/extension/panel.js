@@ -69,6 +69,7 @@ function renderSite({ result, site, host }) {
   if (!result.empty) {
     const opts = [{ id: '', label: `Auto (${result.purpose.label})` }, ...PURPOSES].map((x) => `<option value="${x.id}">${esc(x.label)}</option>`).join('');
     out.push(`<h2>This form</h2><div class="row" style="flex-wrap:nowrap"><span class="small muted" style="flex:none">Looks like</span><select id="purpose" style="flex:1">${opts}</select></div>`);
+    if (result.question) out.push(`<p class="small muted">${esc(result.question.text)} Answer on the page, or pick what this form is above.</p>`);
     if (result.purpose.id === 'onboarding') out.push('<p class="small muted">Joining and background checks do need ID and bank details, but only after you\u2019ve accepted an offer from a company you\u2019ve checked. If you haven\u2019t, switch \u201cLooks like\u201d to a job application.</p>');
     const flagged = result.fields.filter((f) => f.level === 'over_ask' || f.level === 'ask_why');
     if (flagged.length) {
@@ -147,12 +148,15 @@ $('#sample').addEventListener('click', () => { $('#sender').value = SAMPLE.sende
 $('#check').addEventListener('click', runCheck);
 
 let current = null;
+let msgCtx = null;
 async function runCheck() {
   const raw = $('#msg').value.trim();
   if (!raw) return;
   $('#msg-out').innerHTML = '<p class="muted small">Checking on this device...</p>';
   const tr = await toEnglish(raw);
-  const r = analyzeMessage(tr.text, { sender: $('#sender').value });
+  // Context from the page the message was picked on, kept only while the same message is in the box.
+  const ctx = msgCtx && msgCtx.text === raw ? msgCtx : {};
+  const r = analyzeMessage(tr.text, { sender: $('#sender').value, subject: ctx.subject, thread: ctx.thread, replied: ctx.replied, vouched: ctx.vouched });
   const hosts = extractUrls(tr.text).map((u) => u.host);
   const feed = hosts.length ? await send({ type: 'feedCheck', hosts }) : {};
   const phishingHits = Object.values(feed || {}).filter(Boolean).length;
@@ -248,6 +252,16 @@ async function renderPrivacy() {
   ];
   $('#settings').innerHTML = rows.map(([k, label]) => `<label class="set"><input type="checkbox" data-k="${k}" ${s[k] ? 'checked' : ''}><span>${esc(label)}</span></label>`).join('');
   $('#settings').querySelectorAll('input').forEach((i) => i.addEventListener('change', () => send({ type: 'setSettings', patch: { [i.dataset.k]: i.checked } })));
+  const { vouched = {} } = await chrome.storage.local.get('vouched');
+  const keys = Object.keys(vouched);
+  $('#vouched-out').innerHTML = keys.length
+    ? `<div class="card small">${keys.map((k) => `<div class="row" style="padding:4px 0;justify-content:space-between"><span><code>${esc(k)}</code><br><span class="muted">${esc(vouched[k].reason)} · ${esc(new Date(vouched[k].at).toLocaleDateString())}</span></span><button class="ghost" data-unvouch="${esc(k)}">Remove</button></div>`).join('')}</div><p class="note">For these senders ShareLess doesn't question where a message came from. What a message asks for is always checked.</p>`
+    : '<p class="muted small">None. You can vouch for a sender from the chip on their message.</p>';
+  $('#vouched-out').querySelectorAll('[data-unvouch]').forEach((b) => b.addEventListener('click', async () => {
+    delete vouched[b.dataset.unvouch];
+    await chrome.storage.local.set({ vouched });
+    renderPrivacy();
+  }));
   const { lookupLog = [] } = await chrome.storage.local.get('lookupLog');
   $('#log-out').innerHTML = lookupLog.length
     ? `<div class="card">${lookupLog.map((e) => item({ tone: 'grey', icon: e.kind === 'download' ? ICON.check : ICON.quote, title: e.kind === 'download' ? 'Downloaded phishing list' : `<code>${esc(e.sent)}</code> to rdap.org`, meta: esc(new Date(e.at).toLocaleString()) })).join('')}</div>`
@@ -263,6 +277,7 @@ if (params.get('msg')) {
     if (!m) return;
     $('#msg').value = m.text;
     $('#sender').value = m.sender || '';
+    msgCtx = { ...m, text: m.text.trim() };
     refreshAI().then(runCheck);
   });
 } else {
