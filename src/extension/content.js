@@ -1,4 +1,4 @@
-import { analyzeForm, classifyField } from '../core/forms.js';
+import { analyzeForm, classifyField, formPhrase } from '../core/forms.js';
 import { scanPolicyText } from '../core/policy.js';
 import { findBusinessIds } from '../core/ids.js';
 import { siteProfile } from '../core/site.js';
@@ -13,6 +13,9 @@ const elements = new Map();
 let lastResult = null;
 let purposeOverride = null;
 let dismissed = false;
+let selectedAnswer; // your answer to "have you already been selected?": true, false, or not asked yet
+let vouchedFrom = null; // { key, reason } when this tab was opened from a message whose sender you vouched for
+let nudge = null; // the upload prompt in progress: { input, file, fieldId, kind, stage }
 let site = null; // { profile, policy, policyUrl, policyNote, businessIds, trackers, facts }
 let policyText = ''; // kept in memory only, for the panel's deeper on-device read
 
@@ -20,9 +23,9 @@ const text = (el) => (el?.innerText || el?.textContent || '').replace(/\s+/g, ' 
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 
 function ownText(node) {
-  if (!node.querySelector('.sl-badge, #sl-pill, .sl-guard')) return text(node);
+  if (!node.querySelector('.sl-badge, #sl-pill, #sl-nudge, .sl-guard')) return text(node);
   const copy = node.cloneNode(true);
-  copy.querySelectorAll('.sl-badge, #sl-pill, .sl-guard').forEach((b) => b.remove());
+  copy.querySelectorAll('.sl-badge, #sl-pill, #sl-nudge, .sl-guard').forEach((b) => b.remove());
   return (copy.textContent || '').replace(/\s+/g, ' ').trim();
 }
 
@@ -86,6 +89,8 @@ function collect() {
     buttons: [...document.querySelectorAll('button, input[type="submit"], [role="button"]')].slice(0, 12).map((b) => text(b) || b.value || '').join(' | '),
     url: location.hostname + location.pathname,
     purpose: purposeOverride,
+    selected: selectedAnswer,
+    vouched: vouchedFrom,
   };
   return { context, fields, consents };
 }
@@ -187,24 +192,43 @@ function mark(result) {
   }
 }
 
+// The one question a payout form with no stated purpose needs answered.
+const questionRow = (q) => `<span class="sl-row sl-q">${esc(q.text)}</span><span class="sl-actions"><button data-act="sel-yes">Yes, I was selected</button><button class="sl-ghost" data-act="sel-no">No</button></span>`;
+function wireQuestion(el) {
+  el.querySelector('[data-act="sel-yes"]')?.addEventListener('click', () => answer(true));
+  el.querySelector('[data-act="sel-no"]')?.addEventListener('click', () => answer(false));
+  el.querySelector('[data-act="sel-reset"]')?.addEventListener('click', () => answer(undefined));
+}
+async function answer(value) {
+  selectedAnswer = value;
+  dismissed = false;
+  await scan({ refreshSite: true });
+  if (nudge) renderNudge();
+}
+
 function pill(result) {
   document.getElementById('sl-pill')?.remove();
-  if (dismissed || !result || result.empty) return;
+  // The upload prompt owns this corner until you've dealt with it. A re-scan must not replace it.
+  if (nudge || dismissed || !result || result.empty) return;
   const { overAsk, askWhy, consent } = result.summary;
   const p = site?.profile;
   const risky = p && (p.band.id === 'high' || p.band.id === 'mixed');
-  if (!overAsk && !askWhy && !consent && !risky) return;
+  if (!overAsk && !askWhy && !consent && !risky && !result.question) return;
   const el = document.createElement('div');
   el.id = 'sl-pill';
   const parts = [];
   if (p) parts.push(slTrust(p));
+  if (result.question) parts.push(questionRow(result.question));
   const list = [];
-  if (overAsk) list.push(`<span class="sl-row"><b>${overAsk}</b> field${overAsk > 1 ? 's' : ''} asking for more than a ${esc(result.purpose.label.toLowerCase())} form needs</span>`);
+  if (vouchedFrom) list.push(`<span class="sl-row">Opened from a message whose sender you vouched for (${esc(vouchedFrom.key)}).</span>`);
+  else if (selectedAnswer !== undefined) list.push(`<span class="sl-row">You said you ${selectedAnswer ? 'were' : 'were not'} selected. <button class="sl-link" data-act="sel-reset">Change</button></span>`);
+  if (overAsk) list.push(`<span class="sl-row"><b>${overAsk}</b> field${overAsk > 1 ? 's' : ''} asking for more than ${esc(formPhrase(result.purpose))} needs</span>`);
   if (askWhy) list.push(`<span class="sl-row"><b>${askWhy}</b> worth asking why</span>`);
   if (consent) list.push(`<span class="sl-row"><b>${consent}</b> consent line${consent > 1 ? 's' : ''} that give away more than they say</span>`);
   if (list.length) parts.push(`<span class="sl-list">${list.join('')}</span>`);
   el.innerHTML = `${slHead(esc(result.purpose.label), '<button class="sl-x" data-act="hide">Hide</button>')}${parts.join('')}`;
   el.querySelector('[data-act="hide"]').onclick = () => { dismissed = true; el.remove(); };
+  wireQuestion(el);
   document.documentElement.appendChild(el);
 }
 
@@ -258,35 +282,63 @@ document.addEventListener('change', (ev) => {
   uploadNudge(el, file, fieldId, classifyField(describe(el)));
 }, true);
 
+// The prompt has its own element. It used to share #sl-pill with the form summary, so the
+// re-scan a page triggers when it shows your file's preview replaced it within a second.
+// It now stays until you choose, and the summary comes back when it closes.
 function uploadNudge(input, file, fieldId, kind) {
+  nudge = { input, file, fieldId, kind, stage: 'ask' };
   document.getElementById('sl-pill')?.remove();
+  renderNudge();
+}
+
+function closeNudge() {
+  nudge = null;
+  document.getElementById('sl-nudge')?.remove();
+  pill(lastResult);
+}
+
+function renderNudge() {
+  document.getElementById('sl-nudge')?.remove();
+  if (!nudge) return;
+  const { input, file, fieldId, kind, stage } = nudge;
   const el = document.createElement('div');
-  el.id = 'sl-pill';
+  el.id = 'sl-nudge';
   const p = site?.profile;
-  el.innerHTML = `${slHead(`Before this file goes to ${esc(location.hostname)}`)}
-    ${p ? slTrust(p, false) : ''}
-    <span class="sl-row sl-msg">Check what's in it and share only what ${esc((lastResult?.purpose?.label || 'this form').toLowerCase())} needs.</span>
-    <span class="sl-actions"><button data-act="check">Check before sharing</button><button class="sl-ghost" data-act="keep">Upload as is</button></span>`;
-  el.querySelector('[data-act="keep"]').onclick = () => el.remove();
-  el.querySelector('[data-act="check"]').onclick = () => {
-    input.value = ''; // so the original can't be submitted by accident
-    const reader = new FileReader();
-    reader.onload = () => {
-      const fieldDesc = describe(input);
-      chrome.runtime.sendMessage({
-        type: 'openAdvisor', dataUrl: reader.result, name: file.name, mime: file.type, fieldId,
-        context: {
-          host: location.hostname, url: location.origin + location.pathname, fieldLabel: fieldDesc.label, fieldKind: kind?.id || null,
-          purpose: lastResult?.purpose ? { id: lastResult.purpose.id, label: lastResult.purpose.label, confidence: purposeOverride ? 0.95 : 0.7 } : null,
-          trust: p ? { risk: p.risk, coverage: p.coverage, band: p.band, trust: p.trust, notes: p.notes, signals: p.signals.slice(0, 6) } : null,
-          grievanceEmail: site?.policy?.grievanceEmail || null,
-        },
-      });
-      el.querySelector('.sl-msg').textContent = 'Original removed from the form. Checking it in a new tab...';
-      el.querySelector('[data-act="check"]').remove();
+  const hide = '<button class="sl-x" data-act="hide">Hide</button>';
+  if (stage === 'attached') {
+    el.innerHTML = `${slHead('Checked copy attached', hide)}<span class="sl-row" style="margin-top:12px">Only the masked copy is in the form now. Look at the preview before you submit.</span>`;
+  } else if (stage === 'checking') {
+    el.innerHTML = `${slHead(`Before this file goes to ${esc(location.hostname)}`, hide)}
+      <span class="sl-row sl-msg">Original removed from the form. Checking it in a new tab...</span>`;
+  } else {
+    const q = lastResult?.question;
+    el.innerHTML = `${slHead(`Before this file goes to ${esc(location.hostname)}`, hide)}
+      ${p ? slTrust(p, false) : ''}
+      <span class="sl-row sl-msg">${esc(file.name)}: check what's in it and share only what ${esc(lastResult?.purpose ? formPhrase(lastResult.purpose) : 'this form')} needs.</span>
+      ${q ? questionRow(q) : ''}
+      <span class="sl-actions"><button ${q ? 'class="sl-ghost" ' : ''}data-act="check">Check before sharing</button><button class="sl-ghost" data-act="keep">Upload as is</button></span>`;
+    el.querySelector('[data-act="keep"]').onclick = closeNudge;
+    el.querySelector('[data-act="check"]').onclick = () => {
+      input.value = ''; // so the original can't be submitted by accident
+      const reader = new FileReader();
+      reader.onload = () => {
+        const fieldDesc = describe(input);
+        chrome.runtime.sendMessage({
+          type: 'openAdvisor', dataUrl: reader.result, name: file.name, mime: file.type, fieldId,
+          context: {
+            host: location.hostname, url: location.origin + location.pathname, fieldLabel: fieldDesc.label, fieldKind: kind?.id || null,
+            purpose: lastResult?.purpose ? { id: lastResult.purpose.id, label: lastResult.purpose.label, confidence: purposeOverride || selectedAnswer !== undefined ? 0.95 : 0.7 } : null,
+            trust: p ? { risk: p.risk, coverage: p.coverage, band: p.band, trust: p.trust, notes: p.notes, signals: p.signals.slice(0, 6) } : null,
+            grievanceEmail: site?.policy?.grievanceEmail || null,
+          },
+        });
+        if (nudge) { nudge.stage = 'checking'; renderNudge(); }
+      };
+      reader.readAsDataURL(file);
     };
-    reader.readAsDataURL(file);
-  };
+    wireQuestion(el);
+  }
+  el.querySelector('[data-act="hide"]').onclick = closeNudge;
   document.documentElement.appendChild(el);
 }
 
@@ -301,8 +353,9 @@ async function attachShared({ fieldId, dataUrl, name, mime }) {
   input.dispatchEvent(new Event('input', { bubbles: true }));
   input.dispatchEvent(new Event('change', { bubbles: true }));
   delete input.dataset.slAttached;
-  const pillEl = document.getElementById('sl-pill');
-  if (pillEl) pillEl.innerHTML = `${slHead('Checked copy attached')}<span class="sl-row" style="margin-top:12px">Only the masked copy is in the form now. Look at the preview before you submit.</span>`;
+  nudge = { input, fieldId, stage: 'attached' };
+  document.getElementById('sl-pill')?.remove();
+  renderNudge();
   return { ok: true };
 }
 
@@ -320,12 +373,23 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
 });
 
 let timer = null;
-const ours = (n) => n.nodeType === 1 && (n.classList?.contains('sl-badge') || n.classList?.contains('sl-guard') || n.classList?.contains('sl-chip') || n.id === 'sl-pill');
+const ours = (n) => n.nodeType === 1 && (n.classList?.contains('sl-badge') || n.classList?.contains('sl-guard') || n.classList?.contains('sl-chip') || n.id === 'sl-pill' || n.id === 'sl-nudge');
 new MutationObserver((muts) => {
   if (muts.every((m) => [...m.addedNodes, ...m.removedNodes].every(ours))) return;
   clearTimeout(timer);
   timer = setTimeout(() => { if (lastResult && !lastResult.empty) scan(); else if (document.querySelector('input, textarea, select')) scan(); }, 900);
 }).observe(document.documentElement, { childList: true, subtree: true });
 
-scan();
+// Was this tab opened from a message whose sender you vouched for? Ask before the first scan.
+// The click that opened this tab and the tab itself reach the background in either order, so a
+// "no" is asked once more shortly after.
+const askOpenedFrom = () => chrome.runtime.sendMessage({ type: 'openedFrom' }).then((v) => (v?.key ? v : null), () => null);
+askOpenedFrom().then((v) => {
+  vouchedFrom = v;
+  scan();
+  if (!v) setTimeout(async () => {
+    const late = await askOpenedFrom();
+    if (late) { vouchedFrom = late; scan({ refreshSite: true }); }
+  }, 1500);
+});
 startAdapters();

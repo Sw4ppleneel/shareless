@@ -261,7 +261,7 @@ test('after an offer (onboarding) on a trusted site, PAN and bank details are ex
   assert.equal(act.account, 'keep');
 });
 
-test('a joining / BGV form is recognised and Aadhaar is expected there', async () => {
+test('a joining / BGV form is recognised and nothing on it is an over-ask', async () => {
   const { analyzeForm } = await import('../src/core/forms.js');
   const r = analyzeForm({ context: { title: 'New joiner background verification form' }, fields: [{ label: 'Aadhaar number' }, { label: 'PAN number' }, { label: 'Full name' }] });
   assert.equal(r.purpose.id, 'onboarding');

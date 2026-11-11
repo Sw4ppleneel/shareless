@@ -122,9 +122,9 @@ try {
   await page.bringToFront();
   const fileInput = await page.$('#au');
   await fileInput.uploadFile(path.join(root, 'demo/sample-aadhaar-front.png'));
-  await page.waitForSelector('#sl-pill [data-act="check"]', { timeout: 5000 });
+  await page.waitForSelector('#sl-nudge [data-act="check"]', { timeout: 5000 });
   const advTarget = browser.waitForTarget((t) => t.url().includes('advisor.html?token='));
-  await page.click('#sl-pill [data-act="check"]');
+  await page.click('#sl-nudge [data-act="check"]');
   check(await page.$eval('#au', (i) => i.files.length === 0), 'upload: original removed from the form before checking');
   const adv = await (await advTarget).page();
   await adv.setViewport({ width: 1280, height: 900 });
@@ -237,6 +237,63 @@ try {
   check(chips.length === 1 && /concern/.test(chips[0]), `inbound adapter: one chip on the scam message only (${chips.length})`);
   await wa.click('.sl-chip-head');
   await wa.screenshot({ path: path.join(out, '8-whatsapp.png') });
+
+  // 9b. A real joining form that names no purpose: one question, not a wall of over-asks.
+  const pay = await browser.newPage();
+  await pay.setViewport({ width: 1280, height: 900 });
+  await pay.goto(`${base}/payout-form.html`);
+  await pay.waitForSelector('#sl-pill [data-act="sel-yes"]', { timeout: 8000 });
+  const payBadges = () => pay.$$eval('.sl-badge', (b) => b.map((x) => x.firstChild.textContent));
+  const before = await payBadges();
+  const payPill = await pay.$eval('#sl-pill', (p) => p.innerText);
+  console.log('  payout pill:', payPill.replace(/\n/g, ' | '));
+  check(!before.some((b) => b.startsWith('Probably not needed')) && !/a unclear/.test(payPill), 'payout form: nothing called an over-ask before the question is answered');
+  check(!(await pay.$eval('#b', (i) => i.nextElementSibling?.textContent || '')).includes('College or course'), 'payout form: "Branch Name" beside IFSC is not read as a college branch');
+
+  // 9c. The upload prompt survives the page redrawing itself after a file is picked.
+  await (await pay.$('#ch')).uploadFile(path.join(root, 'demo/sample-id-card.png'));
+  await pay.waitForSelector('#sl-nudge [data-act="check"]', { timeout: 5000 });
+  await pay.waitForSelector('#cheque-q .preview', { timeout: 5000 });
+  await new Promise((r) => setTimeout(r, 2500)); // well past the 900ms re-scan that used to replace it
+  check(!!(await pay.$('#sl-nudge [data-act="check"]')) && !(await pay.$('#sl-pill')), 'upload: the "check before sharing" prompt is still there after the page re-renders');
+  await pay.screenshot({ path: path.join(out, '8b-upload-prompt.png') });
+  await pay.click('#sl-nudge [data-act="keep"]');
+  await pay.waitForSelector('#sl-pill [data-act="sel-yes"]', { timeout: 5000 });
+  check(!(await pay.$('#sl-nudge')), 'upload: choosing "Upload as is" closes the prompt and brings the summary back');
+  await pay.click('#sl-pill [data-act="sel-yes"]');
+  await pay.waitForFunction(() => /Joining/.test(document.querySelector('#sl-pill')?.innerText || '') && !document.querySelector('#sl-pill [data-act="sel-yes"]'), { timeout: 8000 });
+  const after = await payBadges();
+  console.log('  payout badges after yes:', JSON.stringify(after));
+  check(after.length === 1 && /Ask why/.test(after[0]) && /Aadhaar/.test(after[0]), 'payout form: after "yes", only the Aadhaar number is still questioned');
+  await pay.screenshot({ path: path.join(out, '8c-payout-form.png') });
+
+  // 9d. Gmail-style thread: tools aren't concerns, vouching clears provenance, and the form
+  // opened from the vouched message is treated as a joining form.
+  const gm = await browser.newPage();
+  await gm.setViewport({ width: 1000, height: 800 });
+  await gm.goto(`${base}/gmail-fixture.html?sl-adapter=gmail`);
+  await gm.waitForSelector('.sl-chip', { timeout: 6000 });
+  await gm.click('.sl-chip-head');
+  const chip1 = await gm.$eval('.sl-chip', (c) => c.innerText);
+  console.log('  mail chip:', chip1.replace(/\n/g, ' | ').slice(0, 260));
+  check(/^2 concerns/.test(chip1) && !/calendly/.test(chip1) && /brightpath-media\.com/.test(chip1), 'mail: scheduling link is not a concern; 2 concerns, not 4');
+  const gh = await browser.newPage();
+  await gh.goto(`${base}/gmail-fixture.html?sl-adapter=gmail&history=1`);
+  await gh.waitForSelector('.sl-chip', { timeout: 6000 });
+  const chipH = await gh.$eval('.sl-chip', (c) => c.innerText);
+  check(/^1 concern\b/.test(chipH) && !/Selection without a process/.test(chipH), 'mail: an interview earlier in the thread answers "selection without a process"');
+  await gh.close();
+  await gm.click('.sl-chip [data-act="vouch"]');
+  await gm.waitForSelector('.sl-chip.sl-vouched', { timeout: 5000 });
+  check(/Sender you vouched for/.test(await gm.$eval('.sl-chip', (c) => c.innerText)), 'mail: vouching for the sender clears the provenance concerns');
+  await gm.screenshot({ path: path.join(out, '8d-mail-vouched.png') });
+  const formTarget = browser.waitForTarget((t) => t.url().endsWith('/payout-form.html') && t.opener() === gm.target(), { timeout: 8000 });
+  await gm.click('#form-link');
+  const linked = await (await formTarget).page();
+  await linked.waitForFunction(() => /vouched for/.test(document.querySelector('#sl-pill')?.innerText || ''), { timeout: 8000 }).catch(() => {});
+  const linkedPill = await linked.$eval('#sl-pill', (p) => p.innerText);
+  console.log('  linked form pill:', linkedPill.replace(/\n/g, ' | '));
+  check(/Joining/.test(linkedPill) && /vouched for \(brightpath-campus\.com\)/.test(linkedPill) && !(await linked.$('#sl-pill [data-act="sel-yes"]')), 'mail -> form: a form opened from a vouched sender is treated as a joining form');
 
   // 10. Ledger and take-it-back letter.
   await panel.bringToFront();

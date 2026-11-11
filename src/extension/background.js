@@ -66,6 +66,20 @@ async function cachedAge(domain, { allowNetwork }) {
 
 const ageDays = (r) => (r === undefined ? undefined : r?.ageDays ?? null);
 
+// Tabs opened in the last few seconds, and a vouched click still waiting for its tab. The click
+// message and the new tab can arrive in either order.
+let recentTabs = [];
+let pendingVouch = null;
+chrome.tabs.onCreated.addListener((tab) => {
+  const now = Date.now();
+  recentTabs = [...recentTabs.filter((t) => now - t.at < 4000), { id: tab.id, openerTabId: tab.openerTabId, at: now }];
+  if (pendingVouch && pendingVouch.from === tab.openerTabId && now - pendingVouch.at < 4000) {
+    chrome.storage.session.set({ [`from:${tab.id}`]: { key: pendingVouch.key, reason: pendingVouch.reason } });
+    pendingVouch = null;
+  }
+});
+chrome.tabs.onRemoved.addListener((id) => { chrome.storage.session.remove(`from:${id}`); });
+
 const handlers = {
   async lookup({ domains }) {
     if ((await settings()).offline) return { offline: true, results: [] };
@@ -131,10 +145,37 @@ const handlers = {
     return { ok: true };
   },
 
+  // A link clicked inside a message from a sender you vouched for. The tab it opens is told
+  // so, and that is all: nothing about the message itself is kept.
+  async vouchedClick({ key, reason }, sender) {
+    const from = sender.tab?.id;
+    if (from === undefined) return { ok: false };
+    const now = Date.now();
+    // The new tab usually arrives after this message, sometimes a moment before it. Cover both:
+    // mark a tab this one opened in the last second, and wait for the next one it opens.
+    // pendingVouch is set first, with no await before it, so a tab created mid-handler sees it.
+    pendingVouch = { from, key, reason, at: now };
+    for (const t of recentTabs.filter((x) => x.openerTabId === from && now - x.at < 1000)) await chrome.storage.session.set({ [`from:${t.id}`]: { key, reason } });
+    return { ok: true };
+  },
+  // Asked by every page as it loads. The context sticks to the first site the tab lands on.
+  async openedFrom(_msg, sender) {
+    const id = sender.tab?.id;
+    if (id === undefined) return null;
+    const k = `from:${id}`;
+    const v = (await chrome.storage.session.get(k))[k];
+    if (!v) return null;
+    let host = '';
+    try { host = new URL(sender.url).hostname; } catch { /* no url */ }
+    if (!host || (host === 'www.google.com' && /^\/url/.test(new URL(sender.url).pathname))) return null; // Gmail's redirect notice
+    if (!v.host) { v.host = host; await chrome.storage.session.set({ [k]: v }); }
+    return v.host === host ? { key: v.key, reason: v.reason } : null;
+  },
+
   // A message picked from a page (context menu, or a chip in Gmail / WhatsApp / Messages).
-  async checkMessage({ text, sender }) {
+  async checkMessage({ text, sender, subject = '', thread = [], replied = false, vouched = null }) {
     const token = crypto.randomUUID();
-    await chrome.storage.session.set({ [`msg:${token}`]: { text, sender } });
+    await chrome.storage.session.set({ [`msg:${token}`]: { text, sender, subject, thread, replied, vouched } });
     await chrome.windows.create({ url: chrome.runtime.getURL(`panel.html?tab=msg&msg=${token}`), type: 'popup', width: 440, height: 760 });
     return { ok: true };
   },

@@ -48,6 +48,7 @@ export const MESSAGE_SIGNALS = {
   sender_concern: { group: 'sender', label: 'Sender doesn\'t match the claim', weight: 1.4, potential: 1.4 },
   sender_registered: { group: 'sender', label: 'Registered business SMS header', weight: -0.8, potential: 0.8 },
   link_concern: { group: 'links', label: 'Suspicious link', weight: 1.5, potential: 1.5 },
+  link_mismatch: { group: 'links', label: 'Link goes to a different domain than the sender\'s', weight: 0.5, potential: 0.5 },
   domain_new: { group: 'age', label: 'Linked domain is brand new', weight: 2.2, potential: 2.2 },
   domain_established: { group: 'age', label: 'Linked domain is long established', weight: -0.8, potential: 0.8 },
   model_tactic: { group: 'model', label: 'Manipulation tactic spotted by the on-device model', weight: 0.4, perUnit: true, max: 1.2, potential: 1.2 },

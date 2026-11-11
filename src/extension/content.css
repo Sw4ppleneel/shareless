@@ -17,40 +17,43 @@
 }
 .sl-badge:hover .sl-why, .sl-badge:focus .sl-why { display: block; }
 
-#sl-pill {
+:is(#sl-pill, #sl-nudge) {
   all: initial; position: fixed; right: 18px; bottom: 18px; z-index: 2147483646; width: 330px; box-sizing: border-box;
   background: #181818; color: #fff; border-radius: 14px; padding: 14px 16px 16px;
   font: 13px/1.45 "SF Pro Display", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   box-shadow: 0 18px 50px rgba(0,0,0,.45), 0 0 0 1px rgba(255,255,255,.06);
 }
-#sl-pill * { box-sizing: border-box; }
-#sl-pill .sl-head { display: flex; align-items: center; gap: 10px; }
-#sl-pill .sl-mark { width: 30px; height: 30px; border-radius: 7px; flex: none; display: grid; place-items: center; background: linear-gradient(135deg, #2BDE86, #13A35F); }
-#sl-pill .sl-mark svg { width: 17px; height: 17px; display: block; }
-#sl-pill .sl-title { display: block; font-weight: 800; font-size: 14px; letter-spacing: -.01em; }
-#sl-pill .sl-sub { display: block; color: #B3B3B3; font-size: 12px; margin-top: 1px; }
-#sl-pill .sl-x { all: initial; margin-left: auto; cursor: pointer; color: #B3B3B3; font: 700 12px -apple-system, sans-serif; padding: 6px 10px; border-radius: 500px; }
-#sl-pill .sl-x:hover { color: #fff; background: #2A2A2A; }
-#sl-pill .sl-row { display: block; margin-top: 6px; color: #B3B3B3; }
-#sl-pill .sl-row b { color: #fff; font-weight: 800; margin-right: 2px; }
-#sl-pill .sl-trust { display: flex; align-items: baseline; gap: 6px; margin-top: 14px; color: #B3B3B3; font-weight: 600; }
-#sl-pill .sl-trust b { font-size: 24px; font-weight: 800; letter-spacing: -.03em; color: #fff; }
-#sl-pill .sl-band { margin-left: auto; font-weight: 700; font-size: 11px; padding: 4px 7px; border-radius: 4px; background: #2A2A2A; color: #B3B3B3; }
-#sl-pill .sl-high b { color: #F3727F; } #sl-pill .sl-high .sl-band { background: rgba(243,114,127,.16); color: #F3727F; }
-#sl-pill .sl-mixed b, #sl-pill .sl-unknown b { color: #FFA42B; } #sl-pill .sl-mixed .sl-band, #sl-pill .sl-unknown .sl-band { background: rgba(255,164,43,.16); color: #FFA42B; }
-#sl-pill .sl-low b { color: #2BDE86; } #sl-pill .sl-low .sl-band { background: rgba(43,222,134,.15); color: #2BDE86; }
-#sl-pill .sl-bar { display: block; height: 4px; border-radius: 2px; background: rgba(255,255,255,.16); margin: 8px 0 4px; overflow: hidden; }
-#sl-pill .sl-bar i { display: block; height: 100%; border-radius: 2px; background: #fff; }
-#sl-pill .sl-high .sl-bar i, #sl-pill .sl-bar.sl-high i { background: #F3727F; }
-#sl-pill .sl-dim { display: block; color: #8A8A8A; font-size: 12px; }
-#sl-pill .sl-list { display: block; margin-top: 10px; padding-top: 6px; border-top: 1px solid #2A2A2A; }
-#sl-pill .sl-actions { display: flex; gap: 8px; margin-top: 14px; }
-#sl-pill button {
+:is(#sl-pill, #sl-nudge) * { box-sizing: border-box; }
+:is(#sl-pill, #sl-nudge) .sl-head { display: flex; align-items: center; gap: 10px; }
+:is(#sl-pill, #sl-nudge) .sl-mark { width: 30px; height: 30px; border-radius: 7px; flex: none; display: grid; place-items: center; background: linear-gradient(135deg, #2BDE86, #13A35F); }
+:is(#sl-pill, #sl-nudge) .sl-mark svg { width: 17px; height: 17px; display: block; }
+:is(#sl-pill, #sl-nudge) .sl-title { display: block; font-weight: 800; font-size: 14px; letter-spacing: -.01em; }
+:is(#sl-pill, #sl-nudge) .sl-sub { display: block; color: #B3B3B3; font-size: 12px; margin-top: 1px; }
+:is(#sl-pill, #sl-nudge) .sl-x { all: initial; margin-left: auto; cursor: pointer; color: #B3B3B3; font: 700 12px -apple-system, sans-serif; padding: 6px 10px; border-radius: 500px; }
+:is(#sl-pill, #sl-nudge) .sl-x:hover { color: #fff; background: #2A2A2A; }
+:is(#sl-pill, #sl-nudge) .sl-row { display: block; margin-top: 6px; color: #B3B3B3; }
+:is(#sl-pill, #sl-nudge) .sl-row b { color: #fff; font-weight: 800; margin-right: 2px; }
+:is(#sl-pill, #sl-nudge) .sl-trust { display: flex; align-items: baseline; gap: 6px; margin-top: 14px; color: #B3B3B3; font-weight: 600; }
+:is(#sl-pill, #sl-nudge) .sl-trust b { font-size: 24px; font-weight: 800; letter-spacing: -.03em; color: #fff; }
+:is(#sl-pill, #sl-nudge) .sl-band { margin-left: auto; font-weight: 700; font-size: 11px; padding: 4px 7px; border-radius: 4px; background: #2A2A2A; color: #B3B3B3; }
+:is(#sl-pill, #sl-nudge) .sl-high b { color: #F3727F; } :is(#sl-pill, #sl-nudge) .sl-high .sl-band { background: rgba(243,114,127,.16); color: #F3727F; }
+:is(#sl-pill, #sl-nudge) .sl-mixed b, :is(#sl-pill, #sl-nudge) .sl-unknown b { color: #FFA42B; } :is(#sl-pill, #sl-nudge) .sl-mixed .sl-band, :is(#sl-pill, #sl-nudge) .sl-unknown .sl-band { background: rgba(255,164,43,.16); color: #FFA42B; }
+:is(#sl-pill, #sl-nudge) .sl-low b { color: #2BDE86; } :is(#sl-pill, #sl-nudge) .sl-low .sl-band { background: rgba(43,222,134,.15); color: #2BDE86; }
+:is(#sl-pill, #sl-nudge) .sl-bar { display: block; height: 4px; border-radius: 2px; background: rgba(255,255,255,.16); margin: 8px 0 4px; overflow: hidden; }
+:is(#sl-pill, #sl-nudge) .sl-bar i { display: block; height: 100%; border-radius: 2px; background: #fff; }
+:is(#sl-pill, #sl-nudge) .sl-high .sl-bar i, :is(#sl-pill, #sl-nudge) .sl-bar.sl-high i { background: #F3727F; }
+:is(#sl-pill, #sl-nudge) .sl-dim { display: block; color: #8A8A8A; font-size: 12px; }
+:is(#sl-pill, #sl-nudge) .sl-list { display: block; margin-top: 10px; padding-top: 6px; border-top: 1px solid #2A2A2A; }
+:is(#sl-pill, #sl-nudge) .sl-actions { display: flex; gap: 8px; margin-top: 14px; }
+:is(#sl-pill, #sl-nudge) button {
   all: initial; cursor: pointer; padding: 10px 16px; border-radius: 500px; background: #2BDE86; color: #04140B;
   font: 700 12.5px/1 "SF Pro Display", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 }
-#sl-pill button:hover { filter: brightness(1.08); }
-#sl-pill button.sl-ghost { background: transparent; color: #fff; box-shadow: inset 0 0 0 1px #535353; }
+:is(#sl-pill, #sl-nudge) button:hover { filter: brightness(1.08); }
+:is(#sl-pill, #sl-nudge) button.sl-ghost { background: transparent; color: #fff; box-shadow: inset 0 0 0 1px #535353; }
+:is(#sl-pill, #sl-nudge) button.sl-link { all: initial; cursor: pointer; color: #fff; text-decoration: underline; font: inherit; font-size: 12px; }
+:is(#sl-pill, #sl-nudge) .sl-q { margin-top: 12px; color: #fff; }
+:is(#sl-pill, #sl-nudge) .sl-actions { flex-wrap: wrap; }
 
 .sl-guard {
   all: initial; display: flex; gap: 10px; align-items: flex-start; margin: 8px 0; padding: 11px 14px; border-radius: 12px; max-width: 600px; box-sizing: border-box;
@@ -67,6 +70,15 @@
 }
 .sl-chip .sl-chip-head::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: #FFA42B; }
 .sl-chip.sl-high .sl-chip-head::before { background: #F3727F; }
+.sl-chip.sl-vouched .sl-chip-head::before { background: #2BDE86; }
+.sl-chip .sl-chip-body select {
+  all: initial; display: block; margin: 8px 0; padding: 7px 10px; border-radius: 8px; background: #2A2A2A; color: #fff; width: 100%; box-sizing: border-box;
+  font: 500 12.5px/1.3 "SF Pro Display", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+.sl-chip .sl-chip-btn {
+  all: initial; cursor: pointer; display: inline-block; padding: 8px 13px; border-radius: 500px; color: #fff; box-shadow: inset 0 0 0 1px #535353;
+  font: 700 12px/1 "SF Pro Display", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
 .sl-chip .sl-chip-head span { color: #B3B3B3; font-weight: 500; }
 .sl-chip .sl-chip-body { margin-top: 8px; padding: 12px 14px; border-radius: 12px; background: #181818; color: #fff; box-shadow: 0 12px 30px rgba(0,0,0,.25); }
 .sl-chip .sl-chip-body div { display: block; margin: 0; padding: 7px 0; border-top: 1px solid #2A2A2A; color: #B3B3B3; font-size: 12.5px; }

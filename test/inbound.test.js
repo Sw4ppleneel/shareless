@@ -65,3 +65,50 @@ test('newer fee pretexts and screen-share asks are flagged', async () => {
   const fine = analyzeMessage('Thanks for applying. Your interview is on Monday at 3pm at our office.', {});
   assert.ok(!fine.checks.some((c) => c.id === 'ask:payment' || c.id === 'ask:screen_share'), 'no false alarm on a plain invite');
 });
+
+// A real onboarding email from an agency running a programme, linking to ordinary tools.
+const ONBOARD = 'Hi, congratulations, you have been selected for the Campus Cloud Scholars programme. Book your onboarding slot at https://calendly.com/brightpath/onboarding and fill in https://forms.gle/AbCdEf123. More about us: https://www.brightpath-media.com';
+const FROM = 'recruitment@brightpath-campus.com';
+
+test('scheduling and form tools are not concerns, and a plain domain mismatch is scored lightly', async () => {
+  const { scoreMessage, countConcerns } = await import('../src/core/inbound.js');
+  const r = analyzeMessage(ONBOARD, { sender: FROM });
+  const c = concerns(r);
+  assert.ok(!c.some((id) => /calendly|forms\.gle/.test(id)), 'tools');
+  assert.deepEqual(c.filter((id) => id.startsWith('link:')), ['link:https://www.brightpath-media.com']);
+  assert.ok(r.checks.find((x) => x.id === 'link:https://www.brightpath-media.com').weak);
+  assert.equal(countConcerns(r.checks), 2);
+  assert.equal(r.verdict.level, 'medium');
+  const s = scoreMessage(r);
+  assert.ok(s.risk < 0.6, `not high risk (${s.risk})`);
+  assert.ok(s.signals.some((x) => x.id === 'link_mismatch') && !s.signals.some((x) => x.id === 'link_concern'));
+});
+
+test('the process can be earlier in the thread, in the subject, or shown by your own reply', () => {
+  assert.ok(concerns(analyzeMessage(ONBOARD, { sender: FROM })).includes('unprompted'));
+  assert.ok(!concerns(analyzeMessage(ONBOARD, { sender: FROM, thread: ['Thanks for attending the interview on Monday.'] })).includes('unprompted'));
+  assert.ok(!concerns(analyzeMessage(ONBOARD, { sender: FROM, subject: 'Result of your technical assessment' })).includes('unprompted'));
+  assert.ok(!concerns(analyzeMessage(ONBOARD, { sender: FROM, replied: true })).includes('unprompted'));
+});
+
+test('vouching clears where it came from, never what it asks for', async () => {
+  const { vouchKey } = await import('../src/core/inbound.js');
+  const v = { reason: 'Introduced by my college or placement cell' };
+  const r = analyzeMessage(ONBOARD, { sender: FROM, vouched: v });
+  assert.deepEqual(concerns(r), []);
+  assert.ok(r.checks.some((c) => c.id === 'vouched' && c.status === 'consistent'));
+  const fee = analyzeMessage(`${ONBOARD} Pay the refundable registration fee of Rs 1,499 and share the OTP sent to your phone.`, { sender: FROM, vouched: v, replied: true, thread: ['interview'] });
+  assert.ok(concerns(fee).includes('ask:payment'));
+  assert.ok(concerns(fee).includes('ask:otp'));
+  assert.equal(vouchKey(FROM), 'brightpath-campus.com');
+  assert.equal(vouchKey('someone.hr@gmail.com'), 'someone.hr@gmail.com');
+  assert.equal(vouchKey('Riya'), null);
+});
+
+test('several bad links count as one concern in the verdict', async () => {
+  const { countConcerns } = await import('../src/core/inbound.js');
+  const r = analyzeMessage('Update KYC at https://bit.ly/a1 or https://bit.ly/b2 or https://tinyurl.com/c3', { sender: 'Riya' });
+  assert.equal(concerns(r).filter((id) => id.startsWith('link:')).length, 3);
+  assert.equal(countConcerns(r.checks), 1);
+  assert.equal(r.verdict.level, 'medium');
+});
